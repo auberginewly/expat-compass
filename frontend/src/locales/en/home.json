@@ -1,0 +1,26 @@
+{
+  "hero": {
+    "title": "Navigate campus life with confidence",
+    "subtitle": "Curated guides covering healthcare, travel, finance, learning, and cultural experiences tailored for international students and faculty at Nanchang University.",
+    "ctaPrimary": "View essential guides",
+    "ctaSecondary": "Watch onboarding video"
+  },
+  "quickLinks": {
+    "title": "Essential services",
+    "medical": "Medical assistance",
+    "transport": "Campus & city transport",
+    "payment": "Digital payments",
+    "education": "Academic support",
+    "culture": "Culture & leisure",
+    "forum": "Community forum"
+  },
+  "announcements": {
+    "title": "Latest updates",
+    "sample": [
+      "Campus health center extends weekend consultations.",
+      "Airport shuttle booking now available for winter arrivals.",
+      "New AI concierge supports both English and Chinese."
+    ]
+  }
+}
+

@@ -1,0 +1,30 @@
+{
+  "brand": "南昌大学外籍人士服务平台",
+  "actions": {
+    "login": "登录",
+    "contactUs": "联系我们",
+    "explore": "立即了解",
+    "switchTheme": "切换主题",
+    "switchLanguage": "切换语言"
+  },
+  "support": {
+    "title": "需要帮助？",
+    "subtitle": "可与智能客服沟通，或转接人工顾问获取支持。",
+    "aiPlaceholder": "请描述您的问题…",
+    "formName": "姓名",
+    "formEmail": "邮箱",
+    "formQuestion": "问题描述",
+    "formSubmit": "提交工单",
+    "aiSubmit": "发送"
+  },
+  "footer": {
+    "rights": "版权所有。",
+    "madeBy": "面向南昌大学国际社区打造。"
+  },
+  "status": {
+    "loading": "加载中…",
+    "error": "出错了，请稍后再试。",
+    "retry": "重试"
+  }
+}
+

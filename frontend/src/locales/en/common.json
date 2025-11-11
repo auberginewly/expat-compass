@@ -1,0 +1,30 @@
+{
+  "brand": "Expat Compass · NCU",
+  "actions": {
+    "login": "Log in",
+    "contactUs": "Contact us",
+    "explore": "Explore now",
+    "switchTheme": "Switch theme",
+    "switchLanguage": "Switch language"
+  },
+  "support": {
+    "title": "Need help?",
+    "subtitle": "Chat with our AI concierge or switch to a human advisor.",
+    "aiPlaceholder": "Describe your question…",
+    "formName": "Name",
+    "formEmail": "Email",
+    "formQuestion": "Question",
+    "formSubmit": "Submit ticket",
+    "aiSubmit": "Send"
+  },
+  "footer": {
+    "rights": "All rights reserved.",
+    "madeBy": "Built for the Nanchang University international community."
+  },
+  "status": {
+    "loading": "Loading…",
+    "error": "Something went wrong.",
+    "retry": "Retry"
+  }
+}
+
