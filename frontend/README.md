@@ -1,6 +1,6 @@
 # Expat Compass 前端
 
-基于 React + TypeScript + Vite，遵循 `docs/specification.md` 中的代码与设计规范，提供渐变风格的南昌大学外籍人士信息聚合平台前端基线。
+基于 React + TypeScript + Vite，遵循 `docs/specification.md` 中的代码与设计规范，提供渐变风格的南昌市外籍人士信息聚合平台前端基线。
 
 ## 核心特性
 - **设计体系**：Ant Design 5 + Tailwind CSS，自定义渐变主题、玻璃拟态组件与暗黑模式。
