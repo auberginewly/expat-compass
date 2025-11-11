@@ -49,7 +49,12 @@ const AppHeader = () => {
         <Space size="middle" align="center" className="shrink-0">
           <ThemeSwitcher />
           <LanguageSwitcher />
-          <Button type="primary" icon={<LoginOutlined />} shape="round">
+          <Button
+            type="primary"
+            icon={<LoginOutlined />}
+            shape="round"
+            onClick={() => navigate('/login')}
+          >
             {t('actions.login')}
           </Button>
         </Space>

@@ -4,12 +4,16 @@ import RootLayout from '@/layouts/RootLayout'
 import PageSpinner from '@/components/feedback/PageSpinner'
 
 const HomePage = lazy(() => import('@/pages/HomePage'))
-const MedicalPage = lazy(() => import('@/pages/MedicalPage'))
-const TransportPage = lazy(() => import('@/pages/TransportPage'))
-const PaymentPage = lazy(() => import('@/pages/PaymentPage'))
-const EducationPage = lazy(() => import('@/pages/EducationPage'))
-const CulturePage = lazy(() => import('@/pages/CulturePage'))
+const MedicalPage = lazy(() => import('@/pages/partition/MedicalPage'))
+const TransportPage = lazy(() => import('@/pages/partition/TransportPage'))
+const PaymentPage = lazy(() => import('@/pages/partition/PaymentPage'))
+const EducationPage = lazy(() => import('@/pages/partition/EducationPage'))
+const CulturePage = lazy(() => import('@/pages/partition/CulturePage'))
 const ForumPage = lazy(() => import('@/pages/ForumPage'))
+const LoginPage = lazy(() => import('@/pages/auth/LoginPage'))
+const SignupPage = lazy(() => import('@/pages/auth/SignupPage'))
+const PrivacyPage = lazy(() => import('@/pages/legal/PrivacyPage'))
+const ServerPage = lazy(() => import('@/pages/legal/ServerPage'))
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'))
 
 const AppRoutes = () => (
@@ -24,10 +28,13 @@ const AppRoutes = () => (
         <Route path="/culture" element={<CulturePage />} />
         <Route path="/forum" element={<ForumPage />} />
       </Route>
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/signup" element={<SignupPage />} />
+      <Route path="/legal/privacy" element={<PrivacyPage />} />
+      <Route path="/legal/terms" element={<ServerPage />} />
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
   </Suspense>
 )
 
 export default AppRoutes
-
