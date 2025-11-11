@@ -43,3 +43,14 @@ body {
   -webkit-text-fill-color: transparent;
 }
 
+.auth-form .ant-form-item .ant-form-item-label > label {
+  padding-bottom: 0px !important;  /* 标签与输入框之间 */
+  margin-bottom: 0 !important;
+  display: inline-flex;
+  align-items: center;
+}
+
+.auth-form .ant-form-item {
+  margin-bottom: 0px !important;  /* Form.Item 之间的距离 */
+}
+
