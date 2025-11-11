@@ -9,11 +9,12 @@ export const lightTheme: ThemeConfig = {
     borderRadius: 12,
     fontFamily: `'Inter', 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`,
     colorBgLayout: '#F7F9FF',
+    controlHeight: 40,
+    controlHeightLG: 48,
+    controlHeightSM: 32,
   },
   components: {
     Button: {
-      controlHeight: 40,
-      controlHeightLG: 48,
       borderRadius: 999,
     },
     Layout: {
@@ -35,11 +36,17 @@ export const darkTheme: ThemeConfig = {
     colorTextBase: '#E1E9FF',
     borderRadius: 12,
     fontFamily: `'Inter', 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`,
+    controlHeight: 40,
+    controlHeightLG: 48,
+    controlHeightSM: 32,
   },
   components: {
     Layout: {
       headerBg: 'rgba(15, 23, 42, 0.85)',
       bodyBg: '#0F172A',
+    },
+    Button: {
+      borderRadius: 999,
     },
   },
 }
