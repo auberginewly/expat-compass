@@ -7,27 +7,7 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
-*.local
-
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
-.DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Dependency directories
+# Packages
 node_modules/
 
 # Build outputs
@@ -35,6 +15,7 @@ dist/
 dist-ssr/
 /frontend/dist/
 /backend/dist/
+**/target/
 
 # Environment files
 .env
@@ -42,32 +23,39 @@ dist-ssr/
 .env.*.local
 
 # Tooling caches
-pnpm-debug.log*
 package-lock.json
 yarn.lock
 .pnpm-store
 .turbo/
 .cache/
 
-# Editor directories and files
+# Editor & IDE
+.vscode/*
+!.vscode/extensions.json
 .idea/
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+*.iml
 
-# Test & coverage
+# OS
+.DS_Store
+Thumbs.db
+
+# Tests & coverage
 coverage/
 *.lcov
 
-# Docker
+# Docker/PIDs
 *.pid
 *.seed
 
 # Storybook
 storybook-static/
 
-# Misc
-docs/
+# Husky internal
 /frontend/.husky/_/
+
+docs
