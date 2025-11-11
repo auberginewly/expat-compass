@@ -13,7 +13,7 @@ const ForumPage = lazy(() => import('@/pages/ForumPage'))
 const LoginPage = lazy(() => import('@/pages/auth/LoginPage'))
 const SignupPage = lazy(() => import('@/pages/auth/SignupPage'))
 const PrivacyPage = lazy(() => import('@/pages/legal/PrivacyPage'))
-const ServerPage = lazy(() => import('@/pages/legal/ServerPage'))
+const ServerPage = lazy(() => import('@/pages/legal/ServicePage'))
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'))
 
 const AppRoutes = () => (
@@ -30,8 +30,8 @@ const AppRoutes = () => (
       </Route>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
-      <Route path="/legal/privacy" element={<PrivacyPage />} />
-      <Route path="/legal/terms" element={<ServerPage />} />
+      <Route path="/privacy" element={<PrivacyPage />} />
+      <Route path="/service" element={<ServerPage />} />
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
   </Suspense>

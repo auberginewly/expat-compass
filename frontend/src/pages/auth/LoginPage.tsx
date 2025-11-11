@@ -146,7 +146,7 @@ const LoginPage = () => {
                         className="cursor-pointer text-[#4c6cf7] transition-colors hover:text-[#3654d6] dark:text-[#7A5CFF] dark:hover:text-[#a58dff]"
                         onClick={(event) => {
                           event.preventDefault()
-                          void navigate('/legal/privacy', { state: { from: location.pathname } })
+                          void navigate('/privacy', { state: { from: location.pathname } })
                         }}
                       />
                     ),
@@ -155,7 +155,7 @@ const LoginPage = () => {
                         className="cursor-pointer text-[#4c6cf7] transition-colors hover:text-[#3654d6] dark:text-[#7A5CFF] dark:hover:text-[#a58dff]"
                         onClick={(event) => {
                           event.preventDefault()
-                          void navigate('/legal/terms', { state: { from: location.pathname } })
+                          void navigate('/service', { state: { from: location.pathname } })
                         }}
                       />
                     ),
