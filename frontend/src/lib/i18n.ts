@@ -6,9 +6,13 @@ import HttpBackend from 'i18next-http-backend'
 import enCommon from '@/locales/en/common.json'
 import enHome from '@/locales/en/home.json'
 import enNav from '@/locales/en/nav.json'
+import enAuth from '@/locales/en/auth.json'
+import enLegal from '@/locales/en/legal.json'
 import zhCommon from '@/locales/zh/common.json'
 import zhHome from '@/locales/zh/home.json'
 import zhNav from '@/locales/zh/nav.json'
+import zhAuth from '@/locales/zh/auth.json'
+import zhLegal from '@/locales/zh/legal.json'
 
 void i18n
   .use(HttpBackend)
@@ -20,16 +24,20 @@ void i18n
         common: enCommon,
         nav: enNav,
         home: enHome,
+        auth: enAuth,
+        legal: enLegal,
       },
       zh: {
         common: zhCommon,
         nav: zhNav,
         home: zhHome,
+        auth: zhAuth,
+        legal: zhLegal,
       },
     },
     fallbackLng: 'zh',
     supportedLngs: ['zh', 'en'],
-    ns: ['common', 'nav', 'home'],
+    ns: ['common', 'nav', 'home', 'auth', 'legal'],
     defaultNS: 'common',
     interpolation: {
       escapeValue: false,

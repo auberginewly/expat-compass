@@ -1,5 +1,5 @@
 {
-  "brand": "南昌大学外籍人士服务平台",
+  "brand": "南昌市外籍人士服务平台",
   "actions": {
     "login": "登录",
     "contactUs": "联系我们",
@@ -19,7 +19,7 @@
   },
   "footer": {
     "rights": "版权所有。",
-    "madeBy": "面向南昌大学国际社区打造。"
+    "madeBy": "面向南昌市国际社区打造。"
   },
   "status": {
     "loading": "加载中…",

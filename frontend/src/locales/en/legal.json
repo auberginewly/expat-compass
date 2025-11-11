@@ -1,0 +1,69 @@
+{
+  "privacy": {
+    "title": "Privacy Policy",
+    "subtitle": "Understand how we collect, use, and protect your information within Expat Compass.",
+    "updated": "Last updated: March 1, 2025",
+    "sections": [
+      {
+        "title": "What we collect",
+        "items": [
+          "Account basics — name, email, role, and department provided by the university.",
+          "Service usage records such as visited guides, forum posts, and support tickets.",
+          "Optional profile details (phone number, preferred contact method) that you share voluntarily."
+        ]
+      },
+      {
+        "title": "How we use data",
+        "items": [
+          "Deliver personalised onboarding content and reminders.",
+          "Coordinate support between international office staff and external partners.",
+          "Improve platform security by analysing aggregated, anonymised metrics."
+        ]
+      },
+      {
+        "title": "Your choices",
+        "items": [
+          "Update or delete optional profile fields at any time via “My Account”.",
+          "Request data export by contacting the International Office support desk.",
+          "Unsubscribe from non-essential email updates directly in the message footer."
+        ]
+      }
+    ],
+    "retention": "We retain mandatory records for the duration of your campus affiliation as required by local regulations, and purge optional data within 90 days of account closure.",
+    "tip": "Tip: when linking to this page, pass the current pathname as navigation state, e.g. navigate('/legal/privacy', { state: { from: location.pathname } }). The back button will return to that path when available."
+  },
+  "terms": {
+    "title": "Terms of Service",
+    "subtitle": "Guidelines that define the responsible use of Expat Compass resources.",
+    "updated": "Last updated: March 1, 2025",
+    "sections": [
+      {
+        "title": "Acceptable use",
+        "items": [
+          "Use the platform solely for campus life coordination, information search, and community support.",
+          "Respect forum etiquette — no harassment, discrimination, spamming, or unauthorised commercial promotion.",
+          "Do not attempt to gain unauthorised access to other users’ data or university systems."
+        ]
+      },
+      {
+        "title": "Content stewardship",
+        "items": [
+          "You retain rights to original submissions while granting the university a licence to display and translate them.",
+          "Official notices may be translated for multilingual audiences; fidelity is prioritised over literal phrasing.",
+          "Moderators may archive or remove content that violates policy or presents outdated information."
+        ]
+      },
+      {
+        "title": "Liability & support",
+        "items": [
+          "The university provides Expat Compass on a best-effort basis; service interruptions may occur during maintenance.",
+          "Links to external resources are provided for convenience — verify requirements directly with the issuing authority.",
+          "Contact the International Office to report security concerns or policy violations."
+        ]
+      }
+    ],
+    "closing": "By continuing to use Expat Compass you agree to abide by these terms and acknowledge that policies may evolve to align with national regulations.",
+    "tip": "Tip: navigate('/legal/terms', { state: { from: location.pathname } }) keeps the back button aligned with the originating page."
+  }
+}
+
