@@ -11,12 +11,19 @@
   },
   "quickLinks": {
     "title": "Essential services",
+    "subtitle": "One-stop solution for your daily needs, making life in Nanchang better",
     "medical": "Medical assistance",
+    "medicalDesc": "Comprehensive medical guides covering hospital appointments, treatment procedures, and healthcare policies to help you quickly understand the local healthcare system.",
     "transport": "Campus & city transport",
+    "transportDesc": "Complete transportation information including campus shuttles, bus routes, metro services, and taxi services to make your travel seamless.",
     "payment": "Digital payments",
+    "paymentDesc": "Detailed guides on mobile payments, bank card applications, and ATM usage to help you quickly establish local payment habits.",
     "education": "Academic support",
+    "educationDesc": "Academic support including course selection guides, grade inquiries, and student system usage to help you succeed in your studies.",
     "culture": "Culture & leisure",
-    "forum": "Community forum"
+    "cultureDesc": "Introduction to local customs, festivals, tourist attractions, and cultural activities to enrich your life experience in Nanchang.",
+    "forum": "Community forum",
+    "forumDesc": "Connect with fellow expats in Nanchang, share experiences, help each other, and build community connections to quickly integrate into your new environment."
   },
   "announcements": {
     "title": "Latest updates",
