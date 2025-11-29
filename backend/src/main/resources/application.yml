@@ -1,0 +1,36 @@
+server:
+  port: 8080  # 固定端口为8080
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/expat_compass_db
+    username: auberginewly
+    password: 1234
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update   # 开发阶段自动创建/更新表结构，生产环境建议使用 flyway
+    show-sql: true       # 开发阶段显示 SQL，方便调试
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true  # 格式化 SQL 输出
+  sql:
+    init:
+      mode: never
+
+# 验证码配置
+captcha:
+  type: easy  # simple: 简单验证码 | easy: EasyCaptcha图形验证码
+
+# JWT配置
+jwt:
+  secret: expat-compass-secret-key-change-in-production-min-256-bits-please-use-a-long-random-string
+  access-token-validity: 900000  # 15分钟（毫秒）
+  refresh-token-validity: 604800000  # 7天（毫秒）
+
+# 日志配置
+logging:
+  level:
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
