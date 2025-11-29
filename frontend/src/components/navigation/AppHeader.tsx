@@ -5,6 +5,8 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import LanguageSwitcher from '@/components/navigation/LanguageSwitcher'
 import ThemeSwitcher from '@/components/navigation/ThemeSwitcher'
+import { UserAvatar } from '@/components/navigation/UserAvatar'
+import { useAuthStore } from '@/stores/authStore'
 import { NAV_ITEMS } from '@/config/navigation'
 
 const { Header } = Layout
@@ -14,6 +16,7 @@ const AppHeader = () => {
   const { t } = useTranslation(['common', 'nav'])
   const location = useLocation()
   const navigate = useNavigate()
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
 
   const selectedKeys = useMemo(() => {
     const match = NAV_ITEMS.find((item) =>
@@ -49,14 +52,18 @@ const AppHeader = () => {
         <Space size="middle" align="center" className="shrink-0">
           <ThemeSwitcher />
           <LanguageSwitcher />
-          <Button
-            type="primary"
-            icon={<LoginOutlined />}
-            shape="round"
-            onClick={() => navigate('/login')}
-          >
-            {t('actions.login')}
-          </Button>
+          {isAuthenticated ? (
+            <UserAvatar />
+          ) : (
+            <Button
+              type="primary"
+              icon={<LoginOutlined />}
+              shape="round"
+              onClick={() => navigate('/login', { state: { from: location.pathname } })}
+            >
+              {t('actions.login')}
+            </Button>
+          )}
         </Space>
       </div>
       <div className="mt-3 flex w-full overflow-x-auto lg:hidden">

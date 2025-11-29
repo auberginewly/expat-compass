@@ -5,6 +5,10 @@
     "ctaPrimary": "View essential guides",
     "ctaSecondary": "Watch onboarding video"
   },
+  "intro": {
+    "title": "Nanchang Expatriate Service Platform",
+    "description": "A one-stop platform integrating healthcare, transportation, payment, education, and cultural services, providing multilingual and localized authoritative guides for foreign residents and visitors in Nanchang, addressing core challenges like language barriers, scattered information, and cultural adaptation to help you easily integrate into Nanchang life."
+  },
   "quickLinks": {
     "title": "Essential services",
     "medical": "Medical assistance",
