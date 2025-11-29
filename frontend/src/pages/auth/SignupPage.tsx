@@ -1,9 +1,12 @@
 import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { Button, Card, Checkbox, Form, Input, Space, Typography } from 'antd'
+import { Button, Card, Checkbox, Form, Input, Space, Typography, message } from 'antd'
 import { useTranslation, Trans } from 'react-i18next'
 import ThemeSwitcher from '@/components/navigation/ThemeSwitcher'
 import LanguageSwitcher from '@/components/navigation/LanguageSwitcher'
+import { CaptchaImage } from '@/components/auth/CaptchaImage'
+import { PasswordStrengthIndicator, validatePasswordStrength } from '@/components/auth/PasswordStrength'
+import { authService } from '@/services/authService'
 
 type SignupFormValues = {
   email: string
@@ -25,15 +28,40 @@ const SignupPage = () => {
   const location = useLocation()
   const from = (location.state as LocationState | undefined)?.from
   const [loading, setLoading] = useState(false)
+  const [captchaId, setCaptchaId] = useState<string | null>(null)
+  const [password, setPassword] = useState('')
 
-  const handleFinish = (values: SignupFormValues) => {
+  const handleFinish = async (values: SignupFormValues) => {
+    if (!captchaId) {
+      message.error('请先加载验证码')
+      return
+    }
+
+    // 前端再次验证密码强度
+    if (!validatePasswordStrength(values.password)) {
+      message.error('密码强度不足，请使用至少8位，包含字母和数字的密码')
+      return
+    }
+
     setLoading(true)
-    // TODO: replace with real signup request
-    window.setTimeout(() => {
+    try {
+      await authService.signup({
+        email: values.email,
+        password: values.password,
+        confirmPassword: values.confirmPassword,
+        captcha: values.captcha,
+        captchaId,
+      })
+      message.success('注册成功')
+      navigate(from || '/', { replace: true })
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || error.message || '注册失败，请重试'
+      message.error(errorMessage)
+      // 注册失败后刷新验证码
+      setCaptchaId(null)
+    } finally {
       setLoading(false)
-      // eslint-disable-next-line no-console
-      console.log('signup success', values)
-    }, 800)
+    }
   }
 
   const handleFinishFailed = (info: unknown) => {
@@ -71,7 +99,7 @@ const SignupPage = () => {
                 onClick={handleBack}
                 className="text-[#4c6cf7] dark:text-[#7A5CFF]"
               >
-                {t('login.backHome')}
+                {t('signup.backHome')}
               </Button>
               <ThemeSwitcher />
               <LanguageSwitcher />
@@ -100,29 +128,41 @@ const SignupPage = () => {
               name="password"
               rules={[
                 { required: true, message: t('common.validation.passwordRequired') },
-                { min: 8, message: t('common.validation.passwordMin') },
+                { min: 8, message: t('common.validation.passwordMinLength') },
+                {
+                  validator: (_: unknown, value: string) => {
+                    if (!value || validatePasswordStrength(value)) {
+                      return Promise.resolve()
+                    }
+                    return Promise.reject(new Error('密码强度不足，请使用至少8位，包含字母和数字的密码'))
+                  },
+                },
               ]}
               hasFeedback
             >
-              <Input.Password placeholder={t('common.passwordPlaceholder')} />
+              <Input.Password
+                placeholder={t('common.passwordPlaceholder')}
+                onChange={(e) => setPassword(e.target.value)}
+              />
             </Form.Item>
-              <Form.Item<SignupFormValues>
-                label={t('common.confirmPassword')}
-                name="confirmPassword"
-                dependencies={['password']}
-                hasFeedback
-                rules={[
-                  { required: true, message: t('common.validation.confirmPasswordRequired') },
-                  ({ getFieldValue }: { getFieldValue: (name: string) => string | undefined }) => ({
-                    validator(_: unknown, value: string) {
-                      if (!value || getFieldValue('password') === value) {
-                        return Promise.resolve()
-                      }
-                      return Promise.reject(new Error(t('common.validation.passwordMismatch')))
-                    },
-                  }),
-                ]}
-              >
+            {password && <PasswordStrengthIndicator password={password} />}
+            <Form.Item<SignupFormValues>
+              label={t('common.confirmPassword')}
+              name="confirmPassword"
+              dependencies={['password']}
+              hasFeedback
+              rules={[
+                { required: true, message: t('common.validation.passwordRequired') },
+                ({ getFieldValue }: { getFieldValue: (name: string) => string | undefined }) => ({
+                  validator(_: unknown, value: string) {
+                    if (!value || getFieldValue('password') === value) {
+                      return Promise.resolve()
+                    }
+                    return Promise.reject(new Error(t('common.validation.passwordMismatch')))
+                  },
+                }),
+              ]}
+            >
               <Input.Password placeholder={t('common.confirmPasswordPlaceholder')} />
             </Form.Item>
             <Form.Item<SignupFormValues>
@@ -131,12 +171,15 @@ const SignupPage = () => {
               rules={[{ required: true, message: t('common.validation.captchaRequired') }]}
             >
               <div className="flex items-center gap-3">
-                <Input placeholder={t('common.captchaPlaceholder')} />
-                <img
-                  src="https://dummyimage.com/320x600/ffffff/000000.png&text=Demo"
-                  alt={t('common.captchaAlt')}
-                  className="h-12 w-28 rounded-lg object-cover"
-                />
+                <Input placeholder={t('common.captchaPlaceholder')} className="flex-1" />
+                <div className="shrink-0">
+                  <CaptchaImage
+                    onCaptchaLoad={(id) => setCaptchaId(id)}
+                    onError={(error) => {
+                      message.error('加载验证码失败：' + error.message)
+                    }}
+                  />
+                </div>
               </div>
             </Form.Item>
 
@@ -145,18 +188,17 @@ const SignupPage = () => {
                 {t('signup.cta')}
               </Button>
             </Form.Item>
-            {/* 同意隐私政策和用户协议 */}
             <Form.Item<SignupFormValues>
-                name="agree"
-                valuePropName="checked"
-                rules={[
-                  {
-                    validator: (_: unknown, value: boolean) =>
-                      value ? Promise.resolve() : Promise.reject(new Error(t('common.validation.agreement'))),
-                  },
-                ]}
-                className="mb-0"
-              >
+              name="agree"
+              valuePropName="checked"
+              rules={[
+                {
+                  validator: (_: unknown, value: boolean) =>
+                    value ? Promise.resolve() : Promise.reject(new Error(t('common.validation.agreement'))),
+                },
+              ]}
+              className="mb-0"
+            >
               <Checkbox>
                 <Trans
                   i18nKey="auth:common.agree"
@@ -167,7 +209,7 @@ const SignupPage = () => {
                         className="cursor-pointer text-[#4c6cf7] transition-colors hover:text-[#3654d6] dark:text-[#7A5CFF] dark:hover:text-[#a58dff]"
                         onClick={(event) => {
                           event.preventDefault()
-                          void navigate('/privacy', { state: { from: location.pathname } })
+                          void navigate('/legal/privacy', { state: { from: location.pathname } })
                         }}
                       />
                     ),
@@ -176,7 +218,7 @@ const SignupPage = () => {
                         className="cursor-pointer text-[#4c6cf7] transition-colors hover:text-[#3654d6] dark:text-[#7A5CFF] dark:hover:text-[#a58dff]"
                         onClick={(event) => {
                           event.preventDefault()
-                          void navigate('/service', { state: { from: location.pathname } })
+                          void navigate('/legal/terms', { state: { from: location.pathname } })
                         }}
                       />
                     ),

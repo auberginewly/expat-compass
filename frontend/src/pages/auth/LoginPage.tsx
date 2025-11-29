@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { Button, Card, Checkbox, Form, Input, Space, Typography } from 'antd'
+import { Button, Card, Checkbox, Form, Input, Space, Typography, message } from 'antd'
 import { useTranslation, Trans } from 'react-i18next'
 import ThemeSwitcher from '@/components/navigation/ThemeSwitcher'
 import LanguageSwitcher from '@/components/navigation/LanguageSwitcher'
+import { CaptchaImage } from '@/components/auth/CaptchaImage'
+import { authService } from '@/services/authService'
 
 type LoginFormValues = {
   email: string
@@ -25,15 +27,32 @@ const LoginPage = () => {
   const location = useLocation()
   const from = (location.state as LocationState | undefined)?.from
   const [loading, setLoading] = useState(false)
+  const [captchaId, setCaptchaId] = useState<string | null>(null)
 
-  const handleFinish = (values: LoginFormValues) => {
+  const handleFinish = async (values: LoginFormValues) => {
+    if (!captchaId) {
+      message.error('请先加载验证码')
+      return
+    }
+
     setLoading(true)
-    // TODO: replace with real authentication request
-    window.setTimeout(() => {
+    try {
+      await authService.login({
+        email: values.email,
+        password: values.password,
+        captcha: values.captcha,
+        captchaId,
+      })
+      message.success('登录成功')
+      navigate(from || '/', { replace: true })
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || error.message || '登录失败，请重试'
+      message.error(errorMessage)
+      // 登录失败后刷新验证码
+      setCaptchaId(null)
+    } finally {
       setLoading(false)
-      // eslint-disable-next-line no-console
-      console.log('login success', values)
-    }, 800)
+    }
   }
 
   const handleFinishFailed = (info: unknown) => {
@@ -109,12 +128,15 @@ const LoginPage = () => {
               rules={[{ required: true, message: t('common.validation.captchaRequired') }]}
             >
               <div className="flex items-center gap-3">
-                <Input placeholder={t('common.captchaPlaceholder')} />
-                <img
-                  src="https://dummyimage.com/320x600/ffffff/000000.png&text=Demo"
-                  alt={t('common.captchaAlt')}
-                  className="h-12 w-28 rounded-lg object-cover"
-                />
+                <Input placeholder={t('common.captchaPlaceholder')} className="flex-1" />
+                <div className="shrink-0">
+                  <CaptchaImage
+                    onCaptchaLoad={(id) => setCaptchaId(id)}
+                    onError={(error) => {
+                      message.error('加载验证码失败：' + error.message)
+                    }}
+                  />
+                </div>
               </div>
             </Form.Item>
             <Form.Item<LoginFormValues> name="remember" valuePropName="checked" className="mb-4">
@@ -146,7 +168,7 @@ const LoginPage = () => {
                         className="cursor-pointer text-[#4c6cf7] transition-colors hover:text-[#3654d6] dark:text-[#7A5CFF] dark:hover:text-[#a58dff]"
                         onClick={(event) => {
                           event.preventDefault()
-                          void navigate('/privacy', { state: { from: location.pathname } })
+                          void navigate('/legal/privacy', { state: { from: location.pathname } })
                         }}
                       />
                     ),
@@ -155,7 +177,7 @@ const LoginPage = () => {
                         className="cursor-pointer text-[#4c6cf7] transition-colors hover:text-[#3654d6] dark:text-[#7A5CFF] dark:hover:text-[#a58dff]"
                         onClick={(event) => {
                           event.preventDefault()
-                          void navigate('/service', { state: { from: location.pathname } })
+                          void navigate('/legal/terms', { state: { from: location.pathname } })
                         }}
                       />
                     ),
