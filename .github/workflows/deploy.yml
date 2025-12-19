@@ -339,7 +339,7 @@ jobs:
               echo "Starting with: $JAVA_CMD -jar -Xms512m -Xmx1024m -Dspring.profiles.active=prod -Djava.io.tmpdir=$APP_TMP_DIR $JAR_FILE"
               # 切换到日志目录，确保可以写入
               cd /www/wwwroot/expat-compass/backend
-              sudo -u www bash -c "cd /www/wwwroot/expat-compass/backend && nohup $JAVA_CMD -jar -Xms512m -Xmx1024m -Dspring.profiles.active=prod -Djava.io.tmpdir=$APP_TMP_DIR $JAR_FILE > $LOG_FILE 2>&1 &" || {
+              sudo -u www bash -c "cd /www/wwwroot/expat-compass/backend && nohup '$JAVA_CMD' -jar -Xms512m -Xmx1024m -Dspring.profiles.active=prod -Djava.io.tmpdir='$APP_TMP_DIR' '$JAR_FILE' > '$LOG_FILE' 2>&1 &" || {
                 echo "Failed with sudo -u www, trying without sudo..."
                 nohup "$JAVA_CMD" -jar -Xms512m -Xmx1024m -Dspring.profiles.active=prod -Djava.io.tmpdir="$APP_TMP_DIR" "$JAR_FILE" > "$LOG_FILE" 2>&1 &
               }
@@ -400,13 +400,18 @@ jobs:
           SERVER_PORT="${{ secrets.SERVER_PORT || '22' }}"
           ssh -p "${SERVER_PORT}" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
             echo "Waiting for service to start..."
-            sleep 10
+            sleep 15  # 增加初始等待时间
             
             # 检查 PostgreSQL 是否运行
             echo "Checking PostgreSQL status..."
             if ! sudo systemctl is-active --quiet postgresql 2>/dev/null && ! systemctl is-active --quiet postgresql 2>/dev/null; then
               echo "⚠️  Warning: PostgreSQL service is not running"
-              echo "Please start PostgreSQL: sudo systemctl start postgresql"
+              # 尝试检查宝塔面板的 PostgreSQL
+              if pgrep -f "postgres" > /dev/null; then
+                echo "✅ PostgreSQL 进程正在运行（可能是宝塔面板安装的）"
+              else
+                echo "Please start PostgreSQL: sudo systemctl start postgresql"
+              fi
             else
               echo "✅ PostgreSQL service is running"
             fi
@@ -414,30 +419,73 @@ jobs:
             # 检查端口是否监听
             if ! netstat -tlnp 2>/dev/null | grep -q ":5432" && ! ss -tlnp 2>/dev/null | grep -q ":5432"; then
               echo "⚠️  Warning: PostgreSQL is not listening on port 5432"
+              # 检查其他端口
+              netstat -tlnp 2>/dev/null | grep postgres || ss -tlnp 2>/dev/null | grep postgres || echo "未找到 PostgreSQL 监听端口"
             else
               echo "✅ PostgreSQL is listening on port 5432"
             fi
             
-            # 健康检查
-            for i in {1..10}; do
-              if curl -f http://localhost:8080/api/health > /dev/null 2>&1; then
-                echo "✅ Health check passed!"
-                exit 0
+            # 检查应用进程
+            echo ""
+            echo "Checking application process..."
+            if pgrep -f "java.*app.jar" > /dev/null; then
+              echo "✅ Application process is running"
+              ps aux | grep "java.*app.jar" | grep -v grep | head -1
+            else
+              echo "❌ Application process is not running"
+              echo "查看应用日志："
+              tail -50 /www/wwwroot/expat-compass/backend/logs/app.log 2>/dev/null || echo "日志文件不存在"
+              exit 1
+            fi
+            
+            # 检查应用端口
+            echo ""
+            echo "Checking application port 8080..."
+            if netstat -tlnp 2>/dev/null | grep -q ":8080" || ss -tlnp 2>/dev/null | grep -q ":8080"; then
+              echo "✅ Port 8080 is listening"
+              netstat -tlnp 2>/dev/null | grep 8080 || ss -tlnp 2>/dev/null | grep 8080
+            else
+              echo "⚠️  Port 8080 is not listening yet (application may still be starting)"
+            fi
+            
+            # 健康检查（增加重试次数和等待时间）
+            echo ""
+            echo "Starting health check..."
+            for i in {1..20}; do
+              # 先检查端口是否监听
+              if netstat -tlnp 2>/dev/null | grep -q ":8080" || ss -tlnp 2>/dev/null | grep -q ":8080"; then
+                # 尝试健康检查
+                if curl -f -s http://localhost:8080/api/health > /dev/null 2>&1; then
+                  echo "✅ Health check passed!"
+                  exit 0
+                fi
+                # 如果端口监听但健康检查失败，显示响应内容
+                RESPONSE=$(curl -s http://localhost:8080/api/health 2>&1 || echo "连接失败")
+                if [ "$i" -eq 10 ] || [ "$i" -eq 20 ]; then
+                  echo "   健康检查响应: $RESPONSE"
+                fi
               fi
-              echo "Attempt $i/10: Service not ready, waiting..."
-              sleep 3
+              echo "Attempt $i/20: Service not ready, waiting..."
+              sleep 5  # 增加等待时间到 5 秒
             done
             
-            echo "❌ Health check failed"
+            echo "❌ Health check failed after 20 attempts"
             echo ""
-            echo "=== Last 50 lines of application log ==="
-            tail -50 /www/wwwroot/expat-compass/backend/logs/app.log || true
-            echo ""
-            echo "=== Checking if application process is running ==="
+            echo "=== Application Process Status ==="
             ps aux | grep "java.*app.jar" | grep -v grep || echo "No Java process found"
             echo ""
-            echo "=== Checking if port 8080 is listening ==="
+            echo "=== Port 8080 Status ==="
             netstat -tlnp 2>/dev/null | grep 8080 || ss -tlnp 2>/dev/null | grep 8080 || echo "Port 8080 is not listening"
+            echo ""
+            echo "=== Last 100 lines of application log ==="
+            tail -100 /www/wwwroot/expat-compass/backend/logs/app.log 2>/dev/null || echo "日志文件不存在或为空"
+            echo ""
+            echo "=== Testing HTTP connection ==="
+            curl -v http://localhost:8080/api/health 2>&1 | head -20 || echo "无法连接到应用"
+            echo ""
+            echo "=== Database connection test ==="
+            echo "检查数据库用户是否存在："
+            sudo -u postgres /www/server/pgsql/bin/psql -h localhost -p 5432 -tAc "SELECT 1 FROM pg_user WHERE usename='auberginewly'" 2>/dev/null || echo "无法连接到数据库或用户不存在"
             exit 1
           EOF
 
