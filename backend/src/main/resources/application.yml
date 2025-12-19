@@ -3,7 +3,7 @@ server:
 
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/expatcompassdb
+    url: jdbc:postgresql://localhost:5432/expat_compass_db
     username: auberginewly
     password: 1234
     driver-class-name: org.postgresql.Driver
