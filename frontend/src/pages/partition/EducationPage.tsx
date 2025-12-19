@@ -5,7 +5,6 @@ import {
   QuickLinks,
   NewsSection,
   FAQSection,
-  ResourceCards,
   type QuickLink,
   type NewsItem,
   type FAQItem,

@@ -3,14 +3,12 @@ import { UserOutlined, LogoutOutlined } from '@ant-design/icons'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/stores/authStore'
 import { authService } from '@/services/authService'
-import { useTranslation } from 'react-i18next'
 
 export const UserAvatar = () => {
   const user = useAuthStore((state) => state.user)
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
   const navigate = useNavigate()
   const location = useLocation()
-  const { t } = useTranslation('common')
 
   if (!isAuthenticated || !user) {
     return null
