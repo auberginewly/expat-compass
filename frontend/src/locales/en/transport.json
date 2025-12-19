@@ -1,0 +1,102 @@
+{
+  "page": {
+    "title": "Campus & City Transport",
+    "subtitle": "Transportation",
+    "description": "Comprehensive transportation guide for expatriates in Nanchang, including metro, bus, ride-hailing, navigation, and other practical information."
+  },
+  "quickLinks": {
+    "title": "Common Transportation Websites",
+    "links": {
+      "metro": {
+        "title": "Nanchang Metro",
+        "description": "Metro line queries, fare information, operating hours",
+        "category": "Metro"
+      },
+      "bus": {
+        "title": "Nanchang Bus",
+        "description": "Bus route queries, real-time arrival information",
+        "category": "Bus"
+      },
+      "didi": {
+        "title": "Didi Chuxing",
+        "description": "Ride-hailing service with Chinese and English interface support",
+        "category": "Ride-hailing"
+      },
+      "amap": {
+        "title": "Amap",
+        "description": "Navigation, route planning, real-time traffic",
+        "category": "Navigation"
+      },
+      "railway": {
+        "title": "12306 Railway",
+        "description": "Train ticket booking, schedule queries",
+        "category": "Railway"
+      },
+      "airport": {
+        "title": "Changbei International Airport",
+        "description": "Flight queries, airport service information",
+        "category": "Aviation"
+      }
+    }
+  },
+  "news": {
+    "title": "Latest Transportation News",
+    "items": {
+      "1": {
+        "title": "Nanchang Metro Line 1 Extension Opens, Connecting Changbei Airport",
+        "summary": "Line 1 Extension (Changbei Airport - Maqiu) opened on June 28, 2025, operating 6:00-23:00, extended to 23:30 on Fridays, weekends, and holidays. Single trip takes 85 minutes, connecting Changbei Airport, Nanchang East Station and other hubs.",
+        "category": "Metro News"
+      },
+      "2": {
+        "title": "Metro Ticket Purchase and Payment Guide for Expatriates",
+        "summary": "Expatriates can purchase tickets at customer service centers at stations like Zhujiang Road Station and Metro Building Station on Lines 1-4 using VISA, Master and other foreign bank cards. Ticket vending machines support Chinese and English interfaces. 7 gate-passing methods are supported including Lulu Xing APP, Alipay/WeChat 'Travel' code.",
+        "category": "Practical Guide"
+      },
+      "3": {
+        "title": "Jiangxi Electric Bicycle Fire Safety Management Regulations Issued",
+        "summary": "The first provincial local regulation targeting electric bicycle fire safety management in China will take effect on March 1, 2026. Expatriates need to understand relevant regulatory requirements.",
+        "category": "Policy & Regulations"
+      },
+      "4": {
+        "title": "Railway 12306 Ticket Purchase Guide for Expatriates",
+        "summary": "The official ticket booking app 'Railway 12306' supports foreign mobile number registration and login. Passport real-name authentication is required before ticket purchase, with online authentication review taking about 3-5 working days.",
+        "category": "Railway Travel"
+      },
+      "5": {
+        "title": "Nanchang Cruise Night Tour Service",
+        "summary": "Passing landmarks like Tengwang Pavilion, Qiushui Square, and Nanchang Star Ferris Wheel, you can watch the Guinness World Record light show composed of 362 high-rise buildings along the river. Regular night tours have three departures at 19:00, 20:05, and 21:15.",
+        "category": "Cruise Travel"
+      }
+    }
+  },
+  "faq": {
+    "title": "Frequently Asked Questions",
+    "items": {
+      "1": {
+        "question": "How can expatriates purchase tickets at metro stations?",
+        "answer": "Expatriates can purchase tickets at customer service centers at stations like Zhujiang Road Station and Metro Building Station on Lines 1-4 using VISA, Master and other foreign bank cards. Ticket vending machines support Chinese and English interfaces, making operation simple and convenient. 7 gate-passing methods are also available including Lulu Xing APP, Alipay/WeChat 'Travel' code, and UnionPay QuickPass."
+      },
+      "2": {
+        "question": "What are the operating hours of Nanchang Metro?",
+        "answer": "Line 1 Extension operates 6:00-23:00, extended to 23:30 on Fridays, weekends, and holidays. Line 2 East Extension opened simultaneously, seamlessly connecting with Nanchang East Station. Line 4 will suspend operations between Baimashan Station and Lizhuangshan Station from September 2 to December 31, 2025, with free bus shuttle service provided during this period."
+      },
+      "3": {
+        "question": "How can expatriates purchase train tickets?",
+        "answer": "You can use the official ticket booking app 'Railway 12306', which supports foreign mobile number registration and login. Passport real-name authentication is required before ticket purchase, with online authentication review taking about 3-5 working days. If time is urgent, you can go to offline high-speed rail station manual counters for authentication review, which takes about 10 minutes. Foreign bank cards or WeChat/Alipay can be used for payment."
+      },
+      "4": {
+        "question": "What transportation options are available from Changbei Airport to the city?",
+        "answer": "You can choose: 1. Metro Line 1 Extension, direct to Changbei Airport Station, operating 6:00-23:00; 2. Airport bus, from railway station to Changbei Airport, passing Zhanqian Road, Bayi Avenue, etc.; 3. Taxi or ride-hailing; 4. Self-driving. It is recommended to choose the appropriate method based on destination and luggage situation."
+      },
+      "5": {
+        "question": "What is the on-campus transportation at Nanchang University?",
+        "answer": "Qianhu Campus has two campus circular bus routes covering core areas like Tianjian Garden and Library, operating 7:00-21:30, with peak frequency of 6 minutes/bus and off-peak frequency of 12 minutes/bus. Fare is 0.9 yuan, supporting Alipay 'Hongcheng Yikatong' QR code scanning. There are also 2,600 Qingju bikes on campus, with students and faculty enjoying unlimited rides for 6.9 yuan/month after certification."
+      },
+      "6": {
+        "question": "How to book cruise night tour service?",
+        "answer": "Passing landmarks like Tengwang Pavilion, Qiushui Square, and Nanchang Star Ferris Wheel, you can watch the Guinness World Record light show composed of 362 high-rise buildings along the river. Regular night tours have three departures at 19:00, 20:05, and 21:15. Regular tickets start at 110 yuan, VIP tickets start at 158 yuan. Some departures offer the immersive performance 'New Pipa Song'."
+      }
+    }
+  }
+}
+

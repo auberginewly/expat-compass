@@ -1,0 +1,97 @@
+{
+  "page": {
+    "title": "Academic Support",
+    "subtitle": "Education",
+    "description": "Comprehensive education service guides for expatriates in Nanchang, including school information, enrollment applications, language learning, and other practical information."
+  },
+  "quickLinks": {
+    "title": "Common Education Websites",
+    "links": {
+      "international": {
+        "title": "Nanchang International School",
+        "description": "Provides international curriculum systems such as IB, AP, A-Level, with course settings aligned with international education standards",
+        "category": "International Education"
+      },
+      "enrollment": {
+        "title": "Nanchang Compulsory Education Smart Enrollment Platform",
+        "description": "Enrollment application platform for expatriate children, supporting residence permit, property, and unified enrollment channels",
+        "category": "Enrollment Application"
+      },
+      "bureau": {
+        "title": "Nanchang Education Bureau",
+        "description": "Enrollment consultation window for expatriate children, providing policy interpretation and one-stop services",
+        "category": "Education Services"
+      },
+      "chinese": {
+        "title": "Chinese Learning",
+        "description": "HSK exams, Chinese training courses",
+        "category": "Language Learning"
+      },
+      "moe": {
+        "title": "Ministry of Education",
+        "description": "Official website of China's Ministry of Education",
+        "category": "Education Policy"
+      },
+      "csc": {
+        "title": "Study in China",
+        "description": "Information and service platform for studying in China",
+        "category": "Study Abroad Services"
+      }
+    }
+  },
+  "news": {
+    "title": "Latest Education News",
+    "items": {
+      "1": {
+        "title": "Enrollment Application Channels Fully Open for Expatriate Children",
+        "summary": "Nanchang has multiple international schools and bilingual schools providing international curriculum systems such as IB, AP, and A-Level. Expatriates can apply to public schools through residence permit channel, property channel, or unified enrollment channel.",
+        "category": "Enrollment Application"
+      },
+      "2": {
+        "title": "Nanchang Education Bureau Establishes Enrollment Consultation Window for Expatriates",
+        "summary": "An enrollment consultation window for expatriate children has been set up in the government service hall, with staff proficient in foreign languages providing policy interpretation, material checklist verification, enrollment process guidance, and other one-stop services.",
+        "category": "Education Services"
+      },
+      "3": {
+        "title": "International Schools Provide Language Adaptation Support Services",
+        "summary": "Nanchang International School arranges fixed weekly Chinese tutoring courses based on expatriate students' Chinese proficiency. Textbooks and teaching materials will be appropriately annotated in English to help expatriate students understand the learning content.",
+        "category": "Education Services"
+      },
+      "4": {
+        "title": "Campus Cultural Activities Promote Exchange Between Chinese and Foreign Students",
+        "summary": "Schools in Nanchang regularly organize cultural exchange activities between Chinese and foreign students, such as 'International Culture Festival' and 'Chinese-Foreign Student Pairing' activities, promoting mutual cultural understanding and friendship.",
+        "category": "Campus Activities"
+      }
+    }
+  },
+  "faq": {
+    "title": "Frequently Asked Questions",
+    "items": {
+      "1": {
+        "question": "How can expatriate children apply to public schools?",
+        "answer": "Applications can be made through three channels: 1. Residence Permit Channel: Need to obtain a valid residence permit in Nanchang, log in to 'Nanchang Compulsory Education Smart Enrollment Digital Platform' or 'Changtong Code' APP, select 'Public Enrollment', fill in information and submit application; 2. Property Channel: If you own legal property in Nanchang, you can apply with real estate certificate; 3. Unified Enrollment Channel: Can apply when the above conditions are not met, and the education department will arrange schools based on available places."
+      },
+      "2": {
+        "question": "What curriculum systems do international schools provide?",
+        "answer": "Nanchang has multiple international schools and bilingual schools providing international curriculum systems such as IB, AP, and A-Level. Course settings and teaching models align with international education standards while incorporating Chinese culture-related content to help students balance international perspectives with local understanding."
+      },
+      "3": {
+        "question": "How can expatriate students receive language adaptation support?",
+        "answer": "Nanchang International School arranges fixed weekly Chinese tutoring courses based on expatriate students' Chinese proficiency. Course content is designed combining daily communication and subject learning needs. At the same time, textbooks and teaching materials will be appropriately annotated in English to help expatriate students understand the learning content. Schools will also match 'study partners' for expatriate students to provide appropriate language assistance in the classroom."
+      },
+      "4": {
+        "question": "How to obtain enrollment consultation services?",
+        "answer": "Nanchang Education Bureau has set up an enrollment consultation window for expatriate children in the government service hall, with staff proficient in foreign languages providing policy interpretation, material checklist verification, enrollment process guidance, and other one-stop services for expatriate parents, avoiding repeated trips due to unclear information."
+      },
+      "5": {
+        "question": "How do schools communicate with expatriate parents?",
+        "answer": "Schools communicate with expatriate parents through multilingual home-school contact books, online communication groups, and other channels, synchronizing information about children's learning situations and campus activity arrangements. Some schools also regularly hold expatriate parent meetings, communicating in English or other commonly used foreign languages to ensure parents can timely understand their children's campus life."
+      },
+      "6": {
+        "question": "What campus cultural exchange activities are available?",
+        "answer": "Schools in Nanchang regularly organize cultural exchange activities between Chinese and foreign students, such as the annual 'International Culture Festival' where expatriate students can showcase their national culture and share traditional customs with Chinese students. 'Chinese-Foreign Student Pairing' activities are also organized, promoting mutual cultural understanding and friendship through joint participation in classroom learning and extracurricular activities."
+      }
+    }
+  }
+}
+

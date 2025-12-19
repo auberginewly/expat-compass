@@ -1,0 +1,32 @@
+{
+  "about": {
+    "title": "关于我们",
+    "description": "南昌外籍人士服务平台致力于为在昌外籍居民与访客提供一站式生活服务指南，涵盖医疗、交通、支付、教育、文化等多个领域。"
+  },
+  "quickLinks": {
+    "title": "快速链接",
+    "medical": "医疗就诊",
+    "transport": "校内外交通",
+    "payment": "支付与银行卡",
+    "education": "学习与教务",
+    "culture": "文化与活动",
+    "forum": "社区论坛"
+  },
+  "legal": {
+    "title": "法律信息",
+    "privacy": "隐私政策",
+    "terms": "服务条款"
+  },
+  "aboutUs": {
+    "title": "关于我们",
+    "page": "关于我们",
+    "github": "GitHub 项目"
+  },
+  "copyright": "南昌外籍人士服务平台",
+  "icp": {
+    "prefix": "ICP备案号",
+    "number": "赣ICP备2024000000号"
+  },
+  "madeBy": "Made with ❤️ by Expat Compass Team"
+}
+

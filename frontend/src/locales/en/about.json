@@ -1,0 +1,113 @@
+{
+  "title": "Warmth in Yuzhang, Home for Expats",
+  "subtitle": "Nanchang Expatriate One-Stop Multilingual Life Service Platform",
+  "sections": {
+    "background": {
+      "title": "Project Background",
+      "content": "In the new era of China's increasingly open development and flourishing Sino-foreign exchanges, the state vigorously promotes friendly exchanges and introduces relevant policies to enable foreign nationals in China to enjoy better services. Many foreign nationals have settled in Nanchang. However, in the current Nanchang social service system, foreign nationals face many problems, such as lack of channels to obtain service information, inability to use relevant platforms, and low service efficiency. At present, how to promote foreign nationals' settlement and work in Nanchang in the field of social governance and public services, and improve social service efficiency has become a development focus."
+    },
+    "content": {
+      "title": "Project Content",
+      "description": "This project is based on national policies, serves foreign nationals in Nanchang, uses the website as the main carrier, takes social value as the core pursuit, and is supported by correct thinking and technology. It aims to improve the efficiency and quality of foreign nationals' access to social public services in Nanchang, promote their settlement and work, and enhance international friendly exchanges. This project relies on an information aggregation website to build an integrated information exchange platform, cooperates with students from the School of Foreign Languages, develops multiple service functions, and provides job opportunities for language workers.",
+      "website": {
+        "title": "Website Overview",
+        "description": "Nanchang Expatriate One-Stop Multilingual Life Service Platform is an integrated website that aggregates Nanchang's relevant service policies and commonly used service platform windows throughout the entire process of Nanchang's social governance and public service system. Positioned as an information and window aggregation platform, it is divided into major sections such as healthcare, transportation, payment, education, and culture & tourism, with refined service throughout the entire process. It can be converted into multiple languages and includes a public exchange forum and multilingual online volunteers in cooperation with students from the School of Foreign Languages, making services more 'warm'."
+      }
+    },
+    "value": {
+      "title": "Social Value",
+      "items": [
+        {
+          "title": "Serving National Opening-Up Strategy",
+          "content": "Addressing language and information barriers for foreign nationals coming to China, building a multilingual comprehensive information platform, integrating various relevant information, optimizing the international business environment, enhancing the city's attractiveness to foreign talent, demonstrating an open and inclusive image, and promoting high-level opening-up and urban soft power enhancement."
+        },
+        {
+          "title": "Promoting Equalization of Public Services and Cross-Cultural Integration",
+          "content": "Focusing on the information gap for foreign groups to access public services, presenting authoritative and convenient information in multiple languages in fields such as healthcare and education, lowering access thresholds, alleviating life anxiety, reducing cultural barriers, building a window for Sino-foreign cultural exchanges, and helping to build a harmonious internationalized community and spread Chinese culture."
+        },
+        {
+          "title": "Empowering Urban Governance Modernization",
+          "content": "Relying on the website to create an 'Internet + Government Services' service model, achieving full multilingual coverage of public services, improving service efficiency and accuracy, providing data support for government policy optimization, and helping to build a smart city and service-oriented government."
+        },
+        {
+          "title": "Stimulating Social Innovation Vitality",
+          "content": "University student teams practice the 'Mass Entrepreneurship and Innovation' policy, build a platform for transforming professional knowledge into practice, explore a sustainable model of 'Public Welfare + Entrepreneurship', drive talent demand in related fields, create diverse employment opportunities, and cultivate compound talents with international vision and digital capabilities."
+        }
+      ]
+    },
+    "innovation": {
+      "title": "Innovation Significance",
+      "items": [
+        {
+          "title": "Achieving Fundamental Model Innovation from 'Information Release' to 'Service Navigation'",
+          "content": "This website goes beyond simple policy document listing and builds a full-chain service navigation system of 'Query-Understand-Action'. The innovation lies in breaking down complex government information into clear steps and demonstrating them intuitively through multilingual graphic guides and some process videos. This upgrades traditional passive and scattered 'information notification' to active integrated 'service empowerment', directly addressing the core pain points of foreign nationals' 'unfamiliar processes and difficult operations', significantly improving the accessibility of public services and efficiency of handling affairs."
+        },
+        {
+          "title": "Building an Interactive Service Ecosystem, Achieving 'Platform + Community + Volunteers' Trinity Innovation",
+          "content": "The platform not only provides information queries but also innovatively integrates public exchange forums and multilingual online volunteer services. The forum allows foreign nationals to share experiences and help each other; volunteer services provide real-time language support and personalized guidance. This 'Platform + Community + Volunteers' trinity model upgrades one-way information transmission to a two-way interactive service ecosystem, making services more 'warm' and truly achieving the transformation from 'tool use' to 'community integration'."
+        }
+      ]
+    },
+    "team": {
+      "title": "Team Members",
+      "members": [
+        {
+          "name": "Ge Junyi",
+          "role": "Team Leader",
+          "college": "School of Foreign Languages, Class of 2024, Japanese"
+        },
+        {
+          "name": "Wu Zixuan",
+          "role": "Team Member",
+          "college": "School of Software, Class of 2024, Cyberspace Security"
+        },
+        {
+          "name": "Kuang Wenfei",
+          "role": "Team Member",
+          "college": "School of Foreign Languages, Class of 2023, English"
+        },
+        {
+          "name": "Hu Shunjie",
+          "role": "Team Member",
+          "college": "Law School, Class of 2024, Law"
+        },
+        {
+          "name": "Fu Linglu",
+          "role": "Team Member",
+          "college": "School of Foreign Languages, Class of 2023, English"
+        },
+        {
+          "name": "Zhang Azi",
+          "role": "Team Member",
+          "college": "School of Foreign Languages, Class of 2024, Japanese"
+        },
+        {
+          "name": "He Yan",
+          "role": "Team Member",
+          "college": "School of Foreign Languages, Class of 2024, Japanese"
+        },
+        {
+          "name": "Huang Xianglin",
+          "role": "Team Member",
+          "college": "School of Foreign Languages, Class of 2024, Japanese"
+        }
+      ]
+    },
+    "advisors": {
+      "title": "Advisors",
+      "list": [
+        {
+          "name": "Zhang Zhang",
+          "title": "Lecturer · Director of Japanese Teaching and Research Office",
+          "college": "School of Foreign Languages"
+        },
+        {
+          "name": "Chen Yeyu",
+          "title": "Professor · Dean of School of Foreign Languages",
+          "college": "School of Foreign Languages"
+        }
+      ]
+    }
+  }
+}
+

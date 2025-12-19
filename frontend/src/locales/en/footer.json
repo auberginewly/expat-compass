@@ -1,0 +1,32 @@
+{
+  "about": {
+    "title": "About Us",
+    "description": "Nanchang Expatriate Service Platform is committed to providing one-stop life service guides for foreign residents and visitors in Nanchang, covering multiple fields including healthcare, transportation, payment, education, and culture."
+  },
+  "quickLinks": {
+    "title": "Quick Links",
+    "medical": "Medical Services",
+    "transport": "Transportation",
+    "payment": "Payment & Banking",
+    "education": "Education",
+    "culture": "Culture & Tourism",
+    "forum": "Community Forum"
+  },
+  "legal": {
+    "title": "Legal",
+    "privacy": "Privacy Policy",
+    "terms": "Terms of Service"
+  },
+  "aboutUs": {
+    "title": "About Us",
+    "page": "About Us",
+    "github": "GitHub Project"
+  },
+  "copyright": "Nanchang Expatriate Service Platform",
+  "icp": {
+    "prefix": "ICP License",
+    "number": "Gan ICP No. 2024000000"
+  },
+  "madeBy": "Made with ❤️ by Expat Compass Team"
+}
+

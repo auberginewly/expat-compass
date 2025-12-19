@@ -5,17 +5,20 @@
     "contactUs": "联系我们",
     "explore": "立即了解",
     "switchTheme": "切换主题",
-    "switchLanguage": "切换语言"
+    "switchLanguage": "切换语言",
+    "back": "返回"
   },
   "support": {
     "title": "需要帮助？",
     "subtitle": "可与智能客服沟通，或转接人工顾问获取支持。",
-    "aiPlaceholder": "请描述您的问题…",
-    "formName": "姓名",
-    "formEmail": "邮箱",
-    "formQuestion": "问题描述",
-    "formSubmit": "提交工单",
-    "aiSubmit": "发送"
+    "aiSubtitle": "AI智能客服",
+    "aiDescription": "我是AI智能客服，可以为您解答关于南昌生活、交通、医疗、教育等方面的问题。",
+    "aiPlaceholder": "请输入您的问题...",
+    "aiSubmit": "发送",
+    "emptyMessage": "请输入消息",
+    "loginRequired": "请先登录以使用AI客服",
+    "messageSent": "消息已发送",
+    "sendFailed": "发送失败，请稍后重试"
   },
   "footer": {
     "rights": "版权所有。",

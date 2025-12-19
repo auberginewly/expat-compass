@@ -1,0 +1,87 @@
+{
+  "title": "Profile",
+  "back": "Back",
+  "avatar": {
+    "label": "Avatar",
+    "selected": "Avatar selected",
+    "selectStyle": "Select avatar style",
+    "refreshAll": "Refresh all",
+    "styles": {
+      "avataaars": "Cartoon",
+      "adventurer": "Adventurer",
+      "big-smile": "Big Smile",
+      "bottts": "Robot",
+      "identicon": "Identicon",
+      "initials": "Initials",
+      "lorelei": "Lorelei",
+      "micah": "Micah",
+      "fun-emoji": "Fun Emoji"
+    }
+  },
+  "email": {
+    "label": "Email"
+  },
+  "displayName": {
+    "label": "Display Name",
+    "placeholder": "Please enter your display name",
+    "maxLength": "Display name cannot exceed 80 characters"
+  },
+  "actions": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "changePassword": "Change Password",
+    "deleteAccount": "Delete Account"
+  },
+  "changePassword": {
+    "title": "Change Password",
+    "oldPassword": {
+      "label": "Current Password",
+      "placeholder": "Please enter your current password",
+      "required": "Please enter your current password"
+    },
+    "newPassword": {
+      "label": "New Password",
+      "placeholder": "Please enter your new password",
+      "required": "Please enter your new password",
+      "minLength": "Password must be at least 8 characters",
+      "weak": "Password strength is insufficient. Please use at least 8 characters with letters and numbers"
+    },
+    "confirmPassword": {
+      "label": "Confirm New Password",
+      "placeholder": "Please enter your new password again",
+      "required": "Please confirm your new password",
+      "mismatch": "The two passwords do not match"
+    },
+    "confirm": "Confirm Change",
+    "success": "Password changed successfully!",
+    "failed": "Failed to change password"
+  },
+  "deleteAccount": {
+    "title": "Delete Account",
+    "warning": "Warning: This action cannot be undone!",
+    "description": "Deleting your account will permanently delete all your data, including:",
+    "dataList": {
+      "profile": "Profile information",
+      "posts": "All published posts",
+      "comments": "All comments",
+      "conversations": "AI conversation history",
+      "other": "All other associated data"
+    },
+    "confirm": "I confirm I want to delete",
+    "passwordLabel": "Please enter your password to confirm deletion:",
+    "passwordPlaceholder": "Please enter your password",
+    "passwordRequired": "Please enter your password",
+    "back": "Back",
+    "finalConfirm": "Confirm Deletion",
+    "success": "Account deleted",
+    "failed": "Failed to delete account"
+  },
+  "messages": {
+    "loginRequired": "Please login first",
+    "goToLogin": "Go to Login",
+    "updateSuccess": "Profile updated successfully!",
+    "updateFailed": "Update failed",
+    "loginFirst": "Please login first"
+  }
+}
+

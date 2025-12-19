@@ -1,0 +1,109 @@
+{
+  "page": {
+    "title": "Digital Payments",
+    "subtitle": "Payment & Banking",
+    "description": "Comprehensive payment and banking service guides for expatriates in Nanchang, including account opening, mobile payments, foreign exchange, and other practical information."
+  },
+  "quickLinks": {
+    "title": "Common Payment and Banking Websites",
+    "links": {
+      "alipay": {
+        "title": "Alipay",
+        "description": "Mobile payment platform supporting QR code payments, transfers, and other functions",
+        "category": "Mobile Payment"
+      },
+      "wechat": {
+        "title": "WeChat Pay",
+        "description": "Built-in payment function in WeChat, widely supported by various merchants",
+        "category": "Mobile Payment"
+      },
+      "boc": {
+        "title": "Bank of China",
+        "description": "Supports account opening for expatriates, provides multi-currency services",
+        "category": "Banking Services"
+      },
+      "icbc": {
+        "title": "ICBC",
+        "description": "Large state-owned bank with extensive branch coverage",
+        "category": "Banking Services"
+      },
+      "unionpay": {
+        "title": "UnionPay",
+        "description": "Bank card payment network supporting domestic and foreign bank cards",
+        "category": "Bank Card"
+      },
+      "safe": {
+        "title": "State Administration of Foreign Exchange",
+        "description": "Foreign exchange policy inquiries and business procedures",
+        "category": "Foreign Exchange"
+      }
+    }
+  },
+  "news": {
+    "title": "Latest Payment News",
+    "items": {
+      "1": {
+        "title": "Guide for Expatriates Opening Bank Accounts in China",
+        "summary": "Detailed explanation of the process, required materials, and precautions for expatriates opening bank accounts in China.",
+        "category": "Banking Services"
+      },
+      "2": {
+        "title": "How to Use Alipay and WeChat Pay",
+        "summary": "Complete tutorial for expatriates using mobile payment platforms, including registration, bank card binding, and other steps.",
+        "category": "Mobile Payment"
+      },
+      "3": {
+        "title": "Interpretation of China's Foreign Exchange Management Policies",
+        "summary": "Explanation of foreign exchange management policies for expatriates, including foreign exchange purchase, settlement, and other businesses.",
+        "category": "Foreign Exchange Policy"
+      }
+    }
+  },
+  "resources": {
+    "title": "Practical Resources",
+    "items": {
+      "1": {
+        "title": "Complete Guide to Bank Account Opening",
+        "description": "Detailed explanation of the complete process and precautions for expatriates opening bank accounts in China.",
+        "tags": ["Banking", "Account Opening"]
+      },
+      "2": {
+        "title": "Mobile Payment Usage Tutorial",
+        "description": "Video tutorial demonstrating how to use Alipay and WeChat Pay for daily consumption.",
+        "tags": ["Payment", "Tutorial"]
+      },
+      "3": {
+        "title": "Exchange Rate Query Tool",
+        "description": "Real-time query of exchange rates between RMB and major currencies, supporting historical exchange rate queries.",
+        "tags": ["Exchange Rate", "Query"]
+      },
+      "4": {
+        "title": "Payment Method Comparison Table",
+        "description": "Compare the advantages and disadvantages of different payment methods to help choose the most suitable payment method.",
+        "tags": ["Comparison", "Guide"]
+      }
+    }
+  },
+  "faq": {
+    "title": "Frequently Asked Questions",
+    "items": {
+      "1": {
+        "question": "Can expatriates open bank accounts in China?",
+        "answer": "Yes. Expatriates can open accounts at banks with valid passports, residence permits, or visas. Requirements may vary slightly between banks, so it is recommended to consult the bank in advance to understand specific requirements. Usually, you need to provide passport, residence documents, work certificate or income certificate, and other materials."
+      },
+      "2": {
+        "question": "How to use Alipay and WeChat Pay?",
+        "answer": "First, you need to download the Alipay or WeChat APP and register an account using a mobile phone number. Then bind a bank card (some foreign bank cards are supported) or use cash top-up. Real-name authentication is required during registration, and expatriates can use their passport for authentication."
+      },
+      "3": {
+        "question": "Can foreign bank cards be used in China?",
+        "answer": "Some merchants and ATMs support international bank cards such as Visa and MasterCard, but the scope of use is limited. It is recommended to apply for a Chinese local bank card or use mobile payment platforms, which is more convenient for daily consumption."
+      },
+      "4": {
+        "question": "How to exchange foreign currency?",
+        "answer": "Foreign currency exchange can be done at banks, foreign exchange outlets, or airport exchange points. You need to bring valid identification documents, and some large exchanges may require relevant supporting materials. It is recommended to understand exchange rates and handling fees in advance."
+      }
+    }
+  }
+}
+

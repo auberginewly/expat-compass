@@ -1,17 +1,24 @@
 package com.expats.nanchang.infrastructure.identity.util;
 
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.security.Keys;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
-
-import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.time.OffsetDateTime;
 import java.util.Date;
-import java.util.Map;
 
+import javax.crypto.SecretKey;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
+
+/**
+ * JWT工具类
+ * 负责JWT令牌的生成、解析和验证
+ *
+ * @author Expat Compass Team
+ */
 @Component
 public class JwtUtil {
 
@@ -80,8 +87,12 @@ public class JwtUtil {
         }
     }
 
-    public OffsetDateTime getExpiresAt(long validity) {
-        return OffsetDateTime.now().plusSeconds(validity / 1000);
+    public OffsetDateTime getExpiresAt(long validityMillis) {
+        return OffsetDateTime.now().plusSeconds(validityMillis / 1000);
+    }
+
+    public long getAccessTokenValidity() {
+        return accessTokenValidity;
     }
 }
 

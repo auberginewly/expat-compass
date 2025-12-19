@@ -1,13 +1,15 @@
 import { Avatar, Dropdown, Space } from 'antd'
-import { UserOutlined, LogoutOutlined, SettingOutlined } from '@ant-design/icons'
-import { useNavigate } from 'react-router-dom'
+import { UserOutlined, LogoutOutlined } from '@ant-design/icons'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/stores/authStore'
 import { authService } from '@/services/authService'
 import { useTranslation } from 'react-i18next'
 
 export const UserAvatar = () => {
-  const { user, isAuthenticated } = useAuthStore()
+  const user = useAuthStore((state) => state.user)
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
   const navigate = useNavigate()
+  const location = useLocation()
   const { t } = useTranslation('common')
 
   if (!isAuthenticated || !user) {
@@ -24,13 +26,7 @@ export const UserAvatar = () => {
       key: 'profile',
       label: '个人中心',
       icon: <UserOutlined />,
-      onClick: () => navigate('/profile'),
-    },
-    {
-      key: 'settings',
-      label: '设置',
-      icon: <SettingOutlined />,
-      onClick: () => navigate('/settings'),
+      onClick: () => navigate('/profile', { state: { from: location.pathname } }),
     },
     {
       type: 'divider' as const,

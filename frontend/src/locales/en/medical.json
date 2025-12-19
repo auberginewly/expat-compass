@@ -1,0 +1,118 @@
+{
+  "page": {
+    "title": "Medical Services",
+    "subtitle": "Medical Services",
+    "description": "Comprehensive medical and health service guides for expatriates in Nanchang, including hospital information, medical insurance procedures, appointment booking, and other practical information."
+  },
+  "quickLinks": {
+    "title": "Common Medical Websites",
+    "links": {
+      "hospital1": {
+        "title": "The First Affiliated Hospital of Nanchang University",
+        "description": "Tertiary hospital providing comprehensive medical services",
+        "category": "General Hospital"
+      },
+      "hospital2": {
+        "title": "Nanchang First Hospital",
+        "description": "Municipal key hospital with comprehensive emergency services",
+        "category": "General Hospital"
+      },
+      "hospital3": {
+        "title": "Jiangxi Provincial People's Hospital",
+        "description": "Provincial tertiary hospital with comprehensive specialties",
+        "category": "General Hospital"
+      },
+      "insurance": {
+        "title": "Nanchang Medical Insurance Bureau",
+        "description": "Medical insurance policy inquiries and procedures",
+        "category": "Insurance Services"
+      },
+      "emergency": {
+        "title": "120 Emergency Center",
+        "description": "Emergency medical assistance hotline",
+        "category": "Emergency Services"
+      },
+      "vaccine": {
+        "title": "Vaccination Appointment",
+        "description": "COVID-19 and other vaccine appointments",
+        "category": "Vaccination"
+      }
+    }
+  },
+  "news": {
+    "title": "Latest Medical News",
+    "items": {
+      "1": {
+        "title": "Updated Guide for Expatriate Medical Insurance in Nanchang",
+        "summary": "Latest medical insurance policy interpretation, including application procedures, required materials, and FAQ.",
+        "category": "Policy Update"
+      },
+      "2": {
+        "title": "Complete Guide to Appointment Booking at Tertiary Hospitals in Nanchang",
+        "summary": "Detailed explanation of how to make online appointments at major hospitals in Nanchang, including WeChat mini-programs, apps, and other channels.",
+        "category": "Practical Guide"
+      },
+      "3": {
+        "title": "FAQ for Expatriates Seeking Medical Care in Nanchang",
+        "summary": "Detailed answers to common questions encountered by expatriates when seeking medical care in Nanchang.",
+        "category": "FAQ"
+      }
+    }
+  },
+  "resources": {
+    "title": "Practical Resources",
+    "items": {
+      "1": {
+        "title": "Medical Insurance Application Guide",
+        "description": "Detailed explanation of the complete process and precautions for expatriates applying for medical insurance in Nanchang.",
+        "tags": ["Insurance", "Application Process"]
+      },
+      "2": {
+        "title": "Hospital Appointment Booking Video Tutorial",
+        "description": "Video demonstration of how to make online appointment bookings at major hospitals.",
+        "tags": ["Appointment", "Booking"]
+      },
+      "3": {
+        "title": "Medical Cost Calculator",
+        "description": "Help estimate costs for common medical procedures, including medical insurance reimbursement calculations.",
+        "tags": ["Cost", "Calculator"]
+      },
+      "4": {
+        "title": "Common Medical Terms Chinese-English Dictionary",
+        "description": "Provides Chinese-English medical term translations commonly used during medical visits for easy communication.",
+        "tags": ["Terms", "Translation"]
+      }
+    }
+  },
+  "faq": {
+    "title": "Frequently Asked Questions",
+    "items": {
+      "1": {
+        "question": "How can expatriates apply for medical insurance in Nanchang?",
+        "answer": "Expatriates can purchase commercial medical insurance or participate in basic medical insurance. Commercial insurance can be purchased through insurance companies, while basic medical insurance requires valid residence documents and must be applied for at the local medical insurance bureau. It is recommended to consult insurance companies or the medical insurance bureau in advance to understand specific requirements and procedures."
+      },
+      "2": {
+        "question": "How to make hospital appointments in Nanchang?",
+        "answer": "You can make appointments through the following methods: 1. Hospital official WeChat public account or mini-program; 2. Hospital official website; 3. Phone appointment; 4. On-site registration at the hospital. It is recommended to make appointments 1-2 weeks in advance, and popular departments may require earlier appointments."
+      },
+      "3": {
+        "question": "What should I do in an emergency?",
+        "answer": "In case of a medical emergency, immediately call 120 emergency hotline. The emergency center will dispatch an ambulance, or you can go directly to the nearest hospital emergency department. It is recommended to know the location and contact information of nearby hospital emergency departments in advance."
+      },
+      "4": {
+        "question": "What documents do expatriates need to prepare for medical visits?",
+        "answer": "Usually you need to prepare: 1. Valid passport; 2. Residence permit or visa; 3. Medical insurance card (if available); 4. Previous medical records (if available). It is recommended to consult the hospital in advance to understand specific requirements."
+      }
+    }
+  },
+  "contact": {
+    "title": "Contact Information",
+    "phone": "0791-12345678",
+    "emergency": "120",
+    "email": "medical@expatcompass.com",
+    "website": "https://www.nanchang.gov.cn/",
+    "address": "No. 1376 Hongguzhong Avenue, Honggutan District, Nanchang",
+    "hours": "Monday to Friday 9:00-17:00"
+  }
+}
+

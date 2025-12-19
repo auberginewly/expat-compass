@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { Button, Card, Checkbox, Form, Input, Space, Typography, message } from 'antd'
+import { Button, Card, Checkbox, Form, Input, Space, Typography } from 'antd'
 import { useTranslation, Trans } from 'react-i18next'
+import toast from 'react-hot-toast'
 import ThemeSwitcher from '@/components/navigation/ThemeSwitcher'
 import LanguageSwitcher from '@/components/navigation/LanguageSwitcher'
 import { CaptchaImage } from '@/components/auth/CaptchaImage'
@@ -33,16 +34,11 @@ const SignupPage = () => {
 
   const handleFinish = async (values: SignupFormValues) => {
     if (!captchaId) {
-      message.error('请先加载验证码')
+      toast.error('请先加载验证码')
       return
     }
 
-    // 前端再次验证密码强度
-    if (!validatePasswordStrength(values.password)) {
-      message.error('密码强度不足，请使用至少8位，包含字母和数字的密码')
-      return
-    }
-
+    // 密码强度验证已在 Form validator 中完成，后端会再次验证作为安全防线
     setLoading(true)
     try {
       await authService.signup({
@@ -52,11 +48,14 @@ const SignupPage = () => {
         captcha: values.captcha,
         captchaId,
       })
-      message.success('注册成功')
+      toast.success('注册成功！', {
+        icon: '🎉',
+        duration: 3000,
+      })
       navigate(from || '/', { replace: true })
     } catch (error: any) {
       const errorMessage = error.response?.data?.message || error.message || '注册失败，请重试'
-      message.error(errorMessage)
+      toast.error(errorMessage)
       // 注册失败后刷新验证码
       setCaptchaId(null)
     } finally {
@@ -99,7 +98,7 @@ const SignupPage = () => {
                 onClick={handleBack}
                 className="text-[#4c6cf7] dark:text-[#7A5CFF]"
               >
-                {t('signup.backHome')}
+                {t('login.backHome')}
               </Button>
               <ThemeSwitcher />
               <LanguageSwitcher />
@@ -128,7 +127,7 @@ const SignupPage = () => {
               name="password"
               rules={[
                 { required: true, message: t('common.validation.passwordRequired') },
-                { min: 8, message: t('common.validation.passwordMinLength') },
+                // { min: 8, message: t('common.validation.passwordMinLength') },
                 {
                   validator: (_: unknown, value: string) => {
                     if (!value || validatePasswordStrength(value)) {
@@ -176,7 +175,7 @@ const SignupPage = () => {
                   <CaptchaImage
                     onCaptchaLoad={(id) => setCaptchaId(id)}
                     onError={(error) => {
-                      message.error('加载验证码失败：' + error.message)
+                      toast.error('加载验证码失败：' + error.message)
                     }}
                   />
                 </div>

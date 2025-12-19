@@ -18,6 +18,11 @@ spring:
   sql:
     init:
       mode: never
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 10MB  # 单个文件最大10MB
+      max-request-size: 50MB  # 请求最大50MB
 
 # 验证码配置
 captcha:
@@ -26,11 +31,28 @@ captcha:
 # JWT配置
 jwt:
   secret: expat-compass-secret-key-change-in-production-min-256-bits-please-use-a-long-random-string
-  access-token-validity: 900000  # 15分钟（毫秒）
+  access-token-validity: 604800000  # 7天（毫秒）= 7 * 24 * 60 * 60 * 1000
   refresh-token-validity: 604800000  # 7天（毫秒）
+
+# AI服务配置
+ai:
+  siliconflow:
+    api-key: sk-vgubsosuznaslkcgkkhbfqbmixekamplisqpywuosfhlyvio
+    model: Qwen/Qwen2.5-72B-Instruct  # 硅基流动可用模型：Qwen/Qwen2.5-72B-Instruct, deepseek/deepseek-chat 等
+  client:
+    type: siliconflow  # mock: 使用Mock客户端 | siliconflow: 使用硅基流动
+
+# 文件上传配置
+app:
+  upload:
+    dir: uploads  # 上传文件存储目录
 
 # 日志配置
 logging:
   level:
     org.hibernate.SQL: DEBUG
     org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    com.expats.nanchang.infrastructure.integration.ai: DEBUG
+    com.expats.nanchang.infrastructure.filter.JwtAuthenticationFilter: DEBUG  # 改为DEBUG以便看到详细认证日志
+    org.springframework.security.web: DEBUG  # 查看Security过滤链的详细信息
+    org.springframework.security.access: DEBUG

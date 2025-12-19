@@ -32,6 +32,18 @@
       "Airport shuttle booking now available for winter arrivals.",
       "New AI concierge supports both English and Chinese."
     ]
+  },
+  "carousel": {
+    "news": {
+      "transport1": "Nanchang Metro Line 1 Extension Opens, Connecting Changbei Airport",
+      "culture1": "144-Hour Transit Visa-Free Policy Officially Implemented",
+      "education1": "Enrollment Application Channels Fully Open for Expatriate Children",
+      "transport2": "Metro Ticket Purchase and Payment Guide for Expatriates",
+      "culture2": "Nanchang Accelerates International Route Layout to Support Visa-Free Policy",
+      "medical1": "Updated Guide for Expatriate Medical Insurance in Nanchang"
+    },
+    "clickToView": "Click to view details →",
+    "viewMore": "View Now"
   }
 }
 

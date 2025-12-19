@@ -1,0 +1,87 @@
+{
+  "title": "个人中心",
+  "back": "返回",
+  "avatar": {
+    "label": "头像",
+    "selected": "已选择头像",
+    "selectStyle": "选择头像风格",
+    "refreshAll": "刷新全部",
+    "styles": {
+      "avataaars": "卡通",
+      "adventurer": "冒险者",
+      "big-smile": "大笑",
+      "bottts": "机器人",
+      "identicon": "识别图标",
+      "initials": "首字母",
+      "lorelei": "洛蕾莱",
+      "micah": "米卡",
+      "fun-emoji": "Fun Emoji"
+    }
+  },
+  "email": {
+    "label": "邮箱"
+  },
+  "displayName": {
+    "label": "昵称",
+    "placeholder": "请输入昵称",
+    "maxLength": "昵称不能超过80个字符"
+  },
+  "actions": {
+    "save": "保存",
+    "cancel": "取消",
+    "changePassword": "修改密码",
+    "deleteAccount": "注销账号"
+  },
+  "changePassword": {
+    "title": "修改密码",
+    "oldPassword": {
+      "label": "原密码",
+      "placeholder": "请输入原密码",
+      "required": "请输入原密码"
+    },
+    "newPassword": {
+      "label": "新密码",
+      "placeholder": "请输入新密码",
+      "required": "请输入新密码",
+      "minLength": "密码长度至少为8位",
+      "weak": "密码强度不足，请使用至少8位，包含字母和数字的密码"
+    },
+    "confirmPassword": {
+      "label": "确认新密码",
+      "placeholder": "请再次输入新密码",
+      "required": "请确认新密码",
+      "mismatch": "两次输入的密码不一致"
+    },
+    "confirm": "确认修改",
+    "success": "密码修改成功！",
+    "failed": "密码修改失败"
+  },
+  "deleteAccount": {
+    "title": "注销账号",
+    "warning": "警告：此操作不可恢复！",
+    "description": "注销账号将永久删除您的所有数据，包括：",
+    "dataList": {
+      "profile": "个人资料信息",
+      "posts": "所有发布的帖子",
+      "comments": "所有评论",
+      "conversations": "AI对话历史",
+      "other": "其他所有关联数据"
+    },
+    "confirm": "我确认要注销",
+    "passwordLabel": "请输入您的密码以确认注销：",
+    "passwordPlaceholder": "请输入密码",
+    "passwordRequired": "请输入密码",
+    "back": "返回",
+    "finalConfirm": "确认注销",
+    "success": "账号已注销",
+    "failed": "注销失败"
+  },
+  "messages": {
+    "loginRequired": "请先登录",
+    "goToLogin": "去登录",
+    "updateSuccess": "资料更新成功！",
+    "updateFailed": "更新失败",
+    "loginFirst": "请先登录"
+  }
+}
+

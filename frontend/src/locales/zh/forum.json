@@ -1,0 +1,84 @@
+{
+  "title": "外籍服务社区",
+  "searchPlaceholder": "搜索帖子或标签...",
+  "createPost": "发帖",
+  "backToList": "返回列表",
+  "viewAll": "查看全部帖子",
+  "noResults": "没有找到相关内容",
+  "tags": {
+    "all": "全部",
+    "medical": "医疗",
+    "help": "求助",
+    "photography": "摄影",
+    "gathering": "聚会",
+    "secondhand": "二手",
+    "furniture": "家具",
+    "food": "美食",
+    "visa": "签证"
+  },
+  "sort": {
+    "newest": "最新",
+    "hottest": "最热"
+  },
+  "post": {
+    "create": "发布新帖",
+    "titlePlaceholder": "标题：一句话描述你的问题或分享",
+    "contentPlaceholder": "详细描述...",
+    "publish": "发布",
+    "hot": "🔥 Hot",
+    "like": "点赞",
+    "comment": "评论",
+    "share": "分享",
+    "comments": "评论",
+    "noComments": "暂无评论，快来抢沙发吧~",
+    "commentPlaceholder": "写下你的评论...",
+    "send": "发送"
+  },
+  "sidebar": {
+    "hotTags": "热门标签",
+    "trending": "社区热榜"
+  },
+  "myPosts": {
+    "title": "我的帖子",
+    "backToList": "返回列表",
+    "empty": "您还没有发布过帖子",
+    "createFirst": "发布第一个帖子",
+    "loadFailed": "加载我的帖子失败"
+  },
+  "pagination": {
+    "total": "共 {{total}} 条帖子"
+  },
+  "upload": {
+    "imageLabel": "添加图片（最多9张）",
+    "uploadText": "上传",
+    "success": "图片上传成功",
+    "failed": "上传失败",
+    "apiNotFound": "上传接口不存在，请检查后端服务"
+  },
+  "tags": {
+    "selectLabel": "选择标签（可选）",
+    "placeholder": "选择或输入标签"
+  },
+  "comment": {
+    "reply": "回复",
+    "replyTo": "回复 {{name}}...",
+    "unknownComment": "该评论",
+    "delete": "删除",
+    "deleteSuccess": "删除成功",
+    "deleteFailed": "删除失败",
+    "sendSuccess": "评论成功！",
+    "sendFailed": "评论失败"
+  },
+  "common": {
+    "cancel": "取消",
+    "loading": "加载中...",
+    "loginRequired": "请先登录"
+  },
+  "footer": {
+    "copyright": "© 2024 南昌外籍服务平台",
+    "rules": "社区规范",
+    "privacy": "隐私政策",
+    "contact": "联系我们"
+  }
+}
+

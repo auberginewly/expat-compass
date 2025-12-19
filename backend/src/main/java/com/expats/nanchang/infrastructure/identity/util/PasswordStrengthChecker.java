@@ -2,6 +2,12 @@ package com.expats.nanchang.infrastructure.identity.util;
 
 import org.springframework.stereotype.Component;
 
+/**
+ * 密码强度检查器
+ * 检查密码强度，支持弱、中、强三个等级
+ *
+ * @author Expat Compass Team
+ */
 @Component
 public class PasswordStrengthChecker {
 

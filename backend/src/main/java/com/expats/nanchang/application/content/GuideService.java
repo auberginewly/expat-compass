@@ -1,11 +1,18 @@
 package com.expats.nanchang.application.content;
 
-import com.expats.nanchang.core.content.domain.Guide;
-import com.expats.nanchang.infrastructure.content.repository.GuideRepository;
-import org.springframework.stereotype.Service;
-
 import java.util.List;
 
+import org.springframework.stereotype.Service;
+
+import com.expats.nanchang.core.content.domain.Guide;
+import com.expats.nanchang.infrastructure.content.repository.GuideRepository;
+
+/**
+ * 指南服务
+ * 负责处理生活指南的查询等业务逻辑
+ *
+ * @author Expat Compass Team
+ */
 @Service
 public class GuideService {
 

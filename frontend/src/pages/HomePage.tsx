@@ -1,14 +1,54 @@
 import { ArrowRightOutlined } from '@ant-design/icons'
-import { Card, Flex, Typography } from 'antd'
+import { Flex, Typography } from 'antd'
 import { useTranslation } from 'react-i18next'
 import { NAV_ITEMS } from '@/config/navigation'
 import { Link } from 'react-router-dom'
-import NewsCarousel from '@/components/NewsCarousel'
+import NewsCarousel, { type NewsItem as CarouselNewsItem } from '@/components/NewsCarousel'
 
 const { Title, Paragraph } = Typography
 
 const HomePage = () => {
   const { t } = useTranslation(['home', 'common', 'nav'])
+
+  // 从各板块摘取的热门新闻（用于轮播）
+  const carouselNews: CarouselNewsItem[] = [
+    {
+      id: 'transport-1',
+      url: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?q=80&w=1000&auto=format&fit=crop',
+      title: t('home:carousel.news.transport1'),
+      link: 'https://www.thepaper.cn/newsDetail_forward_31039683',
+    },
+    {
+      id: 'culture-1',
+      url: 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?q=80&w=1000&auto=format&fit=crop',
+      title: t('home:carousel.news.culture1'),
+      link: 'https://new.qq.com/rain/a/20250320A087IT00',
+    },
+    {
+      id: 'education-1',
+      url: 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?q=80&w=1000&auto=format&fit=crop',
+      title: t('home:carousel.news.education1'),
+      link: 'https://mp.weixin.qq.com/s/lR5n796lnDMIDBimEYiSZQ',
+    },
+    {
+      id: 'transport-2',
+      url: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?q=80&w=1000&auto=format&fit=crop',
+      title: t('home:carousel.news.transport2'),
+      link: 'https://www.ncmtr.com/topic_detail_4/1513.html',
+    },
+    {
+      id: 'culture-2',
+      url: 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?q=80&w=1000&auto=format&fit=crop',
+      title: t('home:carousel.news.culture2'),
+      link: 'http://jx.people.com.cn/n2/2025/1105/c186330-41401779.html',
+    },
+    {
+      id: 'medical-1',
+      url: 'https://images.unsplash.com/photo-1551601651-2a8555f1a136?q=80&w=1000&auto=format&fit=crop',
+      title: t('home:carousel.news.medical1'),
+      link: '#',
+    },
+  ]
 
   const services = [
     {
@@ -52,7 +92,7 @@ const HomePage = () => {
   return (
     <Flex vertical gap={32}>
       {/* 新闻轮播 */}
-      <NewsCarousel />
+      <NewsCarousel items={carouselNews} />
 
       {/* 网站介绍 */}
       <div className="text-center">
@@ -114,7 +154,7 @@ const HomePage = () => {
                       {service.description}
                     </Paragraph>
                     <div className="flex items-center text-primary-gradientStart font-semibold text-base group-hover:text-primary-gradientEnd transition-colors">
-                      立即查看
+                      {t('home:carousel.viewMore')}
                       <ArrowRightOutlined className="ml-2 transform group-hover:translate-x-2 transition-transform" />
                     </div>
                   </div>

@@ -19,7 +19,7 @@ export const lightTheme: ThemeConfig = {
     },
     Layout: {
       headerBg: 'transparent',
-      bodyBg: '#F7F9FF',
+      bodyBg: 'transparent',
     },
     Card: {
       borderRadiusLG: 24,
@@ -43,7 +43,7 @@ export const darkTheme: ThemeConfig = {
   components: {
     Layout: {
       headerBg: 'rgba(15, 23, 42, 0.85)',
-      bodyBg: '#0F172A',
+      bodyBg: 'transparent',
     },
     Button: {
       borderRadius: 999,

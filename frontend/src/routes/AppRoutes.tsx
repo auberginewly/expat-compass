@@ -12,8 +12,10 @@ const CulturePage = lazy(() => import('@/pages/partition/CulturePage'))
 const ForumPage = lazy(() => import('@/pages/ForumPage'))
 const LoginPage = lazy(() => import('@/pages/auth/LoginPage'))
 const SignupPage = lazy(() => import('@/pages/auth/SignupPage'))
+const ProfilePage = lazy(() => import('@/pages/ProfilePage'))
+const AboutPage = lazy(() => import('@/pages/AboutPage'))
 const PrivacyPage = lazy(() => import('@/pages/legal/PrivacyPage'))
-const ServerPage = lazy(() => import('@/pages/legal/ServicePage'))
+const TermsPage = lazy(() => import('@/pages/legal/ServicePage'))
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'))
 
 const AppRoutes = () => (
@@ -30,8 +32,10 @@ const AppRoutes = () => (
       </Route>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
+      <Route path="/profile" element={<ProfilePage />} />
+      <Route path="/about" element={<AboutPage />} />
       <Route path="/privacy" element={<PrivacyPage />} />
-      <Route path="/service" element={<ServerPage />} />
+      <Route path="/terms" element={<TermsPage />} />
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
   </Suspense>

@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { Button, Card, Checkbox, Form, Input, Space, Typography, message } from 'antd'
-import { useTranslation, Trans } from 'react-i18next'
+import { Button, Card, Checkbox, Form, Input, Space, Typography } from 'antd'
+import toast from 'react-hot-toast'
+import { useTranslation } from 'react-i18next'
 import ThemeSwitcher from '@/components/navigation/ThemeSwitcher'
 import LanguageSwitcher from '@/components/navigation/LanguageSwitcher'
 import { CaptchaImage } from '@/components/auth/CaptchaImage'
@@ -12,7 +13,6 @@ type LoginFormValues = {
   password: string
   remember: boolean
   captcha: string
-  agree: boolean
 }
 
 const { Title, Paragraph, Text } = Typography
@@ -22,7 +22,7 @@ type LocationState = {
 }
 
 const LoginPage = () => {
-  const { t, i18n } = useTranslation('auth')
+  const { t } = useTranslation('auth')
   const navigate = useNavigate()
   const location = useLocation()
   const from = (location.state as LocationState | undefined)?.from
@@ -31,7 +31,7 @@ const LoginPage = () => {
 
   const handleFinish = async (values: LoginFormValues) => {
     if (!captchaId) {
-      message.error('请先加载验证码')
+      toast.error('请先加载验证码')
       return
     }
 
@@ -43,11 +43,14 @@ const LoginPage = () => {
         captcha: values.captcha,
         captchaId,
       })
-      message.success('登录成功')
+      toast.success('登录成功！', {
+        icon: '✅',
+        duration: 3000,
+      })
       navigate(from || '/', { replace: true })
     } catch (error: any) {
       const errorMessage = error.response?.data?.message || error.message || '登录失败，请重试'
-      message.error(errorMessage)
+      toast.error(errorMessage)
       // 登录失败后刷新验证码
       setCaptchaId(null)
     } finally {
@@ -133,57 +136,19 @@ const LoginPage = () => {
                   <CaptchaImage
                     onCaptchaLoad={(id) => setCaptchaId(id)}
                     onError={(error) => {
-                      message.error('加载验证码失败：' + error.message)
+                      toast.error('加载验证码失败：' + error.message)
                     }}
                   />
                 </div>
               </div>
             </Form.Item>
-            <Form.Item<LoginFormValues> name="remember" valuePropName="checked" className="mb-4">
+            <Form.Item<LoginFormValues> name="remember" valuePropName="checked" className="mb-0">
               <Checkbox>{t('login.remember')}</Checkbox>
             </Form.Item>
-            <Form.Item className="mb-0">
+            <Form.Item className="mb-0 mt-3">
               <Button block type="primary" htmlType="submit" loading={loading}>
                 {t('login.cta')}
               </Button>
-            </Form.Item>
-            <Form.Item<LoginFormValues>
-              name="agree"
-              valuePropName="checked"
-              rules={[
-                {
-                  validator: (_: unknown, value: boolean) =>
-                    value ? Promise.resolve() : Promise.reject(new Error(t('common.validation.agreement'))),
-                },
-              ]}
-              className="mb-0"
-            >
-              <Checkbox>
-                <Trans
-                  i18nKey="auth:common.agree"
-                  key={i18n.language}
-                  components={{
-                    privacy: (
-                      <span
-                        className="cursor-pointer text-[#4c6cf7] transition-colors hover:text-[#3654d6] dark:text-[#7A5CFF] dark:hover:text-[#a58dff]"
-                        onClick={(event) => {
-                          event.preventDefault()
-                          void navigate('/legal/privacy', { state: { from: location.pathname } })
-                        }}
-                      />
-                    ),
-                    terms: (
-                      <span
-                        className="cursor-pointer text-[#4c6cf7] transition-colors hover:text-[#3654d6] dark:text-[#7A5CFF] dark:hover:text-[#a58dff]"
-                        onClick={(event) => {
-                          event.preventDefault()
-                          void navigate('/legal/terms', { state: { from: location.pathname } })
-                        }}
-                      />
-                    ),
-                  }}
-                />
-              </Checkbox>
             </Form.Item>
           </Form>
           <Space direction="vertical" size={0}>

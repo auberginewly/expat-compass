@@ -1,0 +1,102 @@
+{
+  "page": {
+    "title": "Culture & Leisure",
+    "subtitle": "Culture & Tourism",
+    "description": "Comprehensive culture and tourism guides for expatriates in Nanchang, including attraction information, cultural activities, food recommendations, and other practical information."
+  },
+  "quickLinks": {
+    "title": "Common Culture Websites",
+    "links": {
+      "tengwangge": {
+        "title": "Tengwang Pavilion",
+        "description": "One of the three famous towers in Jiangnan, a landmark attraction in Nanchang",
+        "category": "Historic Sites"
+      },
+      "museum81": {
+        "title": "August 1st Uprising Memorial Hall",
+        "description": "Red tourism attraction, learn about the history of Nanchang Uprising",
+        "category": "Museum"
+      },
+      "culturalCenter": {
+        "title": "Nanchang Cultural Center",
+        "description": "Cultural activities and exhibition information",
+        "category": "Cultural Activities"
+      },
+      "provincialMuseum": {
+        "title": "Jiangxi Provincial Museum",
+        "description": "Learn about Jiangxi's history and culture",
+        "category": "Museum"
+      },
+      "food": {
+        "title": "Nanchang Food",
+        "description": "Nanchang specialty food recommendations and restaurant guides",
+        "category": "Food"
+      },
+      "weekend": {
+        "title": "Weekend Activities",
+        "description": "Nanchang weekend activities and entertainment venues",
+        "category": "Entertainment"
+      }
+    }
+  },
+  "news": {
+    "title": "Latest Culture News",
+    "items": {
+      "1": {
+        "title": "144-Hour Transit Visa-Free Policy Officially Implemented",
+        "summary": "The National Immigration Administration implemented the '144-hour transit visa-free policy' from December 17, 2024: Citizens of 54 countries holding connecting tickets entering through ports such as Nanchang Changbei International Airport can stay visa-free for 10 days in Nanchang and Jingdezhen, Jiangxi Province, and travel across provinces.",
+        "category": "Visa Policy"
+      },
+      "2": {
+        "title": "Nanchang Accelerates International Route Layout to Support Visa-Free Policy",
+        "summary": "To support the visa-free policy, Nanchang is accelerating the layout of international routes. Flights to popular cities such as Osaka, Japan, Singapore, and Kuala Lumpur, Malaysia have been opened or resumed, and will be further increased in the future.",
+        "category": "Transportation Convenience"
+      },
+      "3": {
+        "title": "Major Scenic Spots Fully Updated with Bilingual Chinese-English Signs",
+        "summary": "Major scenic spots (such as Tengwang Pavilion) and cultural tourism maps have been fully updated to bilingual Chinese-English versions. Electronic maps have also added English annotations for locations, making it convenient for foreign tourists to visit.",
+        "category": "Service Upgrade"
+      },
+      "4": {
+        "title": "Nanchang Launches 'Visa-Free + Food' to Attract Tourists",
+        "summary": "The policy encourages merchants to launch English menus and promote specialty snacks such as 'Nanchang Mixed Noodles' and 'Clay Pot Soup'. Many restaurants have even launched 'Visa-Free Packages' targeting foreign tourists.",
+        "category": "Food Culture"
+      },
+      "5": {
+        "title": "Customized Cultural Experience Tour Services",
+        "summary": "For foreign tourists, Nanchang has launched customized cultural experience tours, such as 'Hero City Cultural Experience Tour', and established foreign tourist service stations at places like Tengwang Pavilion, providing free translation and guide services.",
+        "category": "Tourism Services"
+      }
+    }
+  },
+  "faq": {
+    "title": "Frequently Asked Questions",
+    "items": {
+      "1": {
+        "question": "What is the 144-hour transit visa-free policy?",
+        "answer": "The '144-hour transit visa-free policy' implemented by the National Immigration Administration from December 17, 2024: Citizens of 54 countries holding connecting tickets entering through ports such as Nanchang Changbei International Airport can stay visa-free for 10 days (144 hours) in Nanchang and Jingdezhen, Jiangxi Province, and travel across provinces. This means if you enter from Changbei Airport with a valid passport, you can stay in Nanchang for up to 10 days without applying for a Chinese visa."
+      },
+      "2": {
+        "question": "What services are available for expatriates at Changbei Airport?",
+        "answer": "Changbei International Airport has a dedicated service window for expatriates, providing quick entry guidance and payment assistance. The airport supports Visa/Mastercard and Alipay/WeChat Pay, making it convenient for foreign tourists to use."
+      },
+      "3": {
+        "question": "Do scenic spots provide English services?",
+        "answer": "Major scenic spots (such as Tengwang Pavilion) and cultural tourism maps have been fully updated to bilingual Chinese-English versions. Electronic maps have also added English annotations for locations. Foreign tourist service stations have been set up at places like Tengwang Pavilion, providing free translation and guide services."
+      },
+      "4": {
+        "question": "What specialty foods in Nanchang are suitable for expatriates?",
+        "answer": "Nanchang specialty foods include 'Nanchang Mixed Noodles' and 'Clay Pot Soup'. The policy encourages merchants to launch English menus, and many restaurants have launched 'Visa-Free Packages' targeting foreign tourists. Thanks to national policy promotion, Nanchang's catering and retail venues widely support Visa/Mastercard and Alipay/WeChat Pay."
+      },
+      "5": {
+        "question": "What customized cultural experiences are available?",
+        "answer": "For foreign tourists, Nanchang has launched customized cultural experience tours, such as 'Hero City Cultural Experience Tour'. Foreign tourist service stations have been set up at places like Tengwang Pavilion, providing free translation and guide services to help foreign tourists better understand Nanchang culture."
+      },
+      "6": {
+        "question": "How is the cruise night tour service?",
+        "answer": "Passing landmarks like Tengwang Pavilion, Qiushui Square, and Nanchang Star Ferris Wheel, you can watch the Guinness World Record light show composed of 362 high-rise buildings along the river. Some departures offer the immersive performance 'New Pipa Song', combining light shows to recreate Tang Dynasty poetry scenes. Regular night tours have three departures at 19:00, 20:05, and 21:15. Regular tickets start at 110 yuan, VIP tickets start at 158 yuan."
+      }
+    }
+  }
+}
+

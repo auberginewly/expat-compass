@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { LeftOutlined, RightOutlined } from '@ant-design/icons'
+import { useTranslation } from 'react-i18next'
 
 export interface NewsItem {
-  id: number
+  id: number | string
   url: string
   title: string
+  link?: string // 可选的外部链接
 }
 
 interface NewsCarouselProps {
@@ -12,39 +14,41 @@ interface NewsCarouselProps {
 }
 
 const NewsCarousel: React.FC<NewsCarouselProps> = ({ items = [] }) => {
+  const { t } = useTranslation('home')
+  
   // 默认示例数据
   const defaultItems: NewsItem[] = [
     {
       id: 1,
       url: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=1000&auto=format&fit=crop',
-      title: '新闻标题一',
+      title: t('carousel.news.transport1'),
     },
     {
       id: 2,
       url: 'https://images.unsplash.com/photo-1472214103451-9374bd1c798e?q=80&w=1000&auto=format&fit=crop',
-      title: '新闻标题二',
+      title: t('carousel.news.culture1'),
     },
     {
       id: 3,
       url: 'https://images.unsplash.com/photo-1447752875215-b2761acb3c5d?q=80&w=1000&auto=format&fit=crop',
-      title: '新闻标题三',
+      title: t('carousel.news.education1'),
     },
     {
       id: 4,
       url: 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?q=80&w=1000&auto=format&fit=crop',
-      title: '新闻标题四',
+      title: t('carousel.news.transport2'),
     },
     {
       id: 5,
       url: 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?q=80&w=1000&auto=format&fit=crop',
-      title: '新闻标题五',
+      title: t('carousel.news.medical1'),
     },
   ]
 
   const images = items.length > 0 ? items : defaultItems
   const [currentIndex, setCurrentIndex] = useState(0)
   const [isPaused, setIsPaused] = useState(false)
-  const timerRef = useRef<NodeJS.Timeout | null>(null)
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   // 自动播放间隔 (毫秒)
   const AUTOPLAY_INTERVAL = 3000
@@ -150,20 +154,27 @@ const NewsCarousel: React.FC<NewsCarouselProps> = ({ items = [] }) => {
             const isPrev = index === (currentIndex - 1 + images.length) % images.length
             const isNext = index === (currentIndex + 1) % images.length
 
+            const handleClick = () => {
+              if (isActive && img.link) {
+                // 如果是激活状态且有链接，在新标签页打开
+                window.open(img.link, '_blank', 'noopener,noreferrer')
+              } else if (isPrev) {
+                handlePrev()
+              } else if (isNext) {
+                handleNext()
+              }
+            }
+
             return (
               <div
                 key={img.id}
                 className={styles.className}
-                onClick={() => {
-                  if (isPrev) handlePrev()
-                  if (isNext) handleNext()
-                }}
+                onClick={handleClick}
                 role="button"
                 tabIndex={0}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') {
-                    if (isPrev) handlePrev()
-                    if (isNext) handleNext()
+                    handleClick()
                   }
                 }}
               >
@@ -179,7 +190,12 @@ const NewsCarousel: React.FC<NewsCarouselProps> = ({ items = [] }) => {
                     isActive ? 'opacity-100 delay-200' : 'opacity-0'
                   }`}
                 >
-                  <h3 className="text-2xl font-bold text-white">{img.title}</h3>
+                  <h3 className={`text-2xl font-bold text-white ${isActive && img.link ? 'cursor-pointer hover:text-blue-300 transition-colors' : ''}`}>
+                    {img.title}
+                  </h3>
+                  {isActive && img.link && (
+                    <p className="text-sm text-gray-300 mt-2">{t('carousel.clickToView')}</p>
+                  )}
                 </div>
               </div>
             )

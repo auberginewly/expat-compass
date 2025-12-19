@@ -1,0 +1,86 @@
+{
+  "title": "Expat Service Community",
+  "searchPlaceholder": "Search posts or tags...",
+  "createPost": "Create Post",
+  "backToList": "Back to List",
+  "viewAll": "View All Posts",
+  "noResults": "No results found",
+  "tags": {
+    "all": "All",
+    "medical": "Medical",
+    "help": "Help",
+    "photography": "Photography",
+    "gathering": "Gathering",
+    "secondhand": "Secondhand",
+    "furniture": "Furniture",
+    "food": "Food",
+    "visa": "Visa",
+    "selectLabel": "Select Tags (Optional)",
+    "placeholder": "Select or enter tags"
+  },
+  "sort": {
+    "newest": "Newest",
+    "hottest": "Hottest"
+  },
+  "post": {
+    "create": "Create New Post",
+    "titlePlaceholder": "Title: Describe your question or share in one sentence",
+    "titleRequired": "Please enter a title",
+    "titleMaxLength": "Title cannot exceed 100 characters",
+    "contentPlaceholder": "Detailed description...",
+    "contentRequired": "Please enter content",
+    "contentMaxLength": "Content cannot exceed 5000 characters",
+    "publish": "Publish",
+    "hot": "🔥 Hot",
+    "like": "Like",
+    "comment": "Comment",
+    "share": "Share",
+    "comments": "Comments",
+    "noComments": "No comments yet, be the first to comment!",
+    "commentPlaceholder": "Write your comment...",
+    "send": "Send"
+  },
+  "sidebar": {
+    "hotTags": "Hot Tags",
+    "trending": "Trending Topics"
+  },
+  "myPosts": {
+    "title": "My Posts",
+    "backToList": "Back to List",
+    "empty": "You haven't published any posts yet",
+    "createFirst": "Create Your First Post",
+    "loadFailed": "Failed to load my posts"
+  },
+  "pagination": {
+    "total": "Total {{total}} posts"
+  },
+  "upload": {
+    "imageLabel": "Add Images (up to 9)",
+    "uploadText": "Upload",
+    "success": "Image uploaded successfully",
+    "failed": "Upload failed",
+    "apiNotFound": "Upload API not found, please check backend service"
+  },
+  "comment": {
+    "reply": "Reply",
+    "replyTo": "Reply to {{name}}...",
+    "unknownComment": "this comment",
+    "delete": "Delete",
+    "deleteSuccess": "Deleted successfully",
+    "deleteFailed": "Failed to delete",
+    "sendSuccess": "Comment posted!",
+    "sendFailed": "Failed to post comment"
+  },
+  "common": {
+    "cancel": "Cancel",
+    "loading": "Loading...",
+    "loginRequired": "Please login first"
+  },
+  "footer": {
+    "copyright": "© 2024 Nanchang Expat Service Platform",
+    "rules": "Community Rules",
+    "privacy": "Privacy Policy",
+    "contact": "Contact Us"
+  }
+}
+
