@@ -65,7 +65,18 @@ jobs:
         run: |
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
-          ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts 2>&1 || true
+          SERVER_PORT="${{ secrets.SERVER_PORT || '22' }}"
+          SERVER_HOST="${{ secrets.SERVER_HOST }}"
+          echo "🔍 Debug: SERVER_HOST length: ${#SERVER_HOST}"
+          echo "🔍 Debug: SERVER_PORT: ${SERVER_PORT}"
+          echo "🔍 Debug: SERVER_HOST format check..."
+          if [[ ! "${SERVER_HOST}" =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
+            echo "⚠️  Warning: SERVER_HOST may not be a valid IP address format"
+            echo "⚠️  Current value (first 10 chars): ${SERVER_HOST:0:10}..."
+          else
+            echo "✅ SERVER_HOST format looks correct"
+          fi
+          ssh-keyscan -p "${SERVER_PORT}" -H "${SERVER_HOST}" >> ~/.ssh/known_hosts 2>&1 || true
 
       - name: Create deployment directories
         run: |
@@ -73,37 +84,45 @@ jobs:
             echo "❌ Error: SERVER_HOST secret is not set"
             exit 1
           fi
-          echo "Connecting to ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}"
-          ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
+          SERVER_PORT="${{ secrets.SERVER_PORT || '22' }}"
+          echo "🔍 Debug: Connecting to ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:${SERVER_PORT}"
+          echo "🔍 Debug: SERVER_HOST format check..."
+          if [[ ! "${{ secrets.SERVER_HOST }}" =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
+            echo "⚠️  Warning: SERVER_HOST may not be a valid IP address format"
+          fi
+          ssh -p "${SERVER_PORT}" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
             mkdir -p /www/wwwroot/expat-compass/{frontend,backend/uploads,backend/logs}
             chown -R www:www /www/wwwroot/expat-compass
           EOF
 
       - name: Deploy frontend
         run: |
+          SERVER_PORT="${{ secrets.SERVER_PORT || '22' }}"
           # 清空旧文件（保留 .htaccess 等配置文件）
-          ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} "rm -rf /www/wwwroot/expat-compass/frontend/*"
+          ssh -p "${SERVER_PORT}" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} "rm -rf /www/wwwroot/expat-compass/frontend/*"
           # 上传新文件
-          scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -r frontend/dist/* ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/www/wwwroot/expat-compass/frontend/
+          scp -P "${SERVER_PORT}" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -r frontend/dist/* ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/www/wwwroot/expat-compass/frontend/
           # 设置权限
-          ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} "chown -R www:www /www/wwwroot/expat-compass/frontend"
+          ssh -p "${SERVER_PORT}" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} "chown -R www:www /www/wwwroot/expat-compass/frontend"
 
       - name: Deploy backend
         run: |
+          SERVER_PORT="${{ secrets.SERVER_PORT || '22' }}"
           # 备份旧版本
-          ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
+          ssh -p "${SERVER_PORT}" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
             if [ -f /www/wwwroot/expat-compass/backend/app.jar ]; then
               cp /www/wwwroot/expat-compass/backend/app.jar /www/wwwroot/expat-compass/backend/app.jar.backup.$(date +%Y%m%d%H%M%S)
             fi
           EOF
           # 上传新 JAR
-          scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null backend/target/*.jar ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/www/wwwroot/expat-compass/backend/app.jar
+          scp -P "${SERVER_PORT}" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null backend/target/*.jar ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/www/wwwroot/expat-compass/backend/app.jar
           # 设置权限
-          ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} "chown www:www /www/wwwroot/expat-compass/backend/app.jar"
+          ssh -p "${SERVER_PORT}" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} "chown www:www /www/wwwroot/expat-compass/backend/app.jar"
 
       - name: Restart backend service
         run: |
-          ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
+          SERVER_PORT="${{ secrets.SERVER_PORT || '22' }}"
+          ssh -p "${SERVER_PORT}" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
             # 如果使用 systemd 服务
             if systemctl is-active --quiet expat-compass 2>/dev/null; then
               echo "Restarting via systemd..."
@@ -134,7 +153,8 @@ jobs:
 
       - name: Health check
         run: |
-          ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
+          SERVER_PORT="${{ secrets.SERVER_PORT || '22' }}"
+          ssh -p "${SERVER_PORT}" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
             echo "Waiting for service to start..."
             sleep 10
             
