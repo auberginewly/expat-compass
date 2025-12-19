@@ -129,40 +129,56 @@ jobs:
           echo ""
           echo "🔍 正在连接到 ${SERVER_USER}@${SERVER_HOST}:${SERVER_PORT}"
           ssh -p "${SERVER_PORT}" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=10 "${SERVER_USER}@${SERVER_HOST}" << 'EOF'
-            mkdir -p /www/wwwroot/expat-compass/{frontend,backend/uploads,backend/logs}
-            chown -R www:www /www/wwwroot/expat-compass
+            # 使用 sudo 创建目录（ubuntu 用户需要 sudo 权限）
+            sudo mkdir -p /www/wwwroot/expat-compass/{frontend,backend/uploads,backend/logs} || mkdir -p /www/wwwroot/expat-compass/{frontend,backend/uploads,backend/logs}
+            # 设置权限
+            sudo chown -R www:www /www/wwwroot/expat-compass 2>/dev/null || chown -R www:www /www/wwwroot/expat-compass 2>/dev/null || true
           EOF
 
       - name: Deploy frontend
         run: |
           SERVER_PORT="${{ secrets.SERVER_PORT || '22' }}"
+          SERVER_USER="${{ secrets.SERVER_USER }}"
+          SERVER_HOST="${{ secrets.SERVER_HOST }}"
           # 清空旧文件（保留 .htaccess 等配置文件）
-          ssh -p "${SERVER_PORT}" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} "rm -rf /www/wwwroot/expat-compass/frontend/*"
-          # 上传新文件
-          scp -P "${SERVER_PORT}" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -r frontend/dist/* ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/www/wwwroot/expat-compass/frontend/
-          # 设置权限
-          ssh -p "${SERVER_PORT}" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} "chown -R www:www /www/wwwroot/expat-compass/frontend"
+          ssh -p "${SERVER_PORT}" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "${SERVER_USER}@${SERVER_HOST}" "sudo rm -rf /www/wwwroot/expat-compass/frontend/* || rm -rf /www/wwwroot/expat-compass/frontend/*"
+          # 上传新文件到临时目录
+          scp -P "${SERVER_PORT}" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -r frontend/dist/* "${SERVER_USER}@${SERVER_HOST}:/tmp/expat-compass-frontend/"
+          # 移动文件到目标目录并设置权限
+          ssh -p "${SERVER_PORT}" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "${SERVER_USER}@${SERVER_HOST}" << 'EOF'
+            sudo mv /tmp/expat-compass-frontend/* /www/wwwroot/expat-compass/frontend/ 2>/dev/null || mv /tmp/expat-compass-frontend/* /www/wwwroot/expat-compass/frontend/
+            sudo chown -R www:www /www/wwwroot/expat-compass/frontend 2>/dev/null || chown -R www:www /www/wwwroot/expat-compass/frontend 2>/dev/null || true
+            rm -rf /tmp/expat-compass-frontend
+          EOF
 
       - name: Deploy backend
         run: |
           SERVER_PORT="${{ secrets.SERVER_PORT || '22' }}"
+          SERVER_USER="${{ secrets.SERVER_USER }}"
+          SERVER_HOST="${{ secrets.SERVER_HOST }}"
           # 备份旧版本
-          ssh -p "${SERVER_PORT}" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
+          ssh -p "${SERVER_PORT}" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "${SERVER_USER}@${SERVER_HOST}" << 'EOF'
             if [ -f /www/wwwroot/expat-compass/backend/app.jar ]; then
+              sudo cp /www/wwwroot/expat-compass/backend/app.jar /www/wwwroot/expat-compass/backend/app.jar.backup.$(date +%Y%m%d%H%M%S) 2>/dev/null || \
               cp /www/wwwroot/expat-compass/backend/app.jar /www/wwwroot/expat-compass/backend/app.jar.backup.$(date +%Y%m%d%H%M%S)
             fi
           EOF
-          # 上传新 JAR
-          scp -P "${SERVER_PORT}" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null backend/target/*.jar ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/www/wwwroot/expat-compass/backend/app.jar
-          # 设置权限
-          ssh -p "${SERVER_PORT}" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} "chown www:www /www/wwwroot/expat-compass/backend/app.jar"
+          # 上传新 JAR 到临时目录
+          scp -P "${SERVER_PORT}" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null backend/target/*.jar "${SERVER_USER}@${SERVER_HOST}:/tmp/app.jar"
+          # 移动文件到目标目录并设置权限
+          ssh -p "${SERVER_PORT}" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "${SERVER_USER}@${SERVER_HOST}" << 'EOF'
+            sudo mv /tmp/app.jar /www/wwwroot/expat-compass/backend/app.jar 2>/dev/null || mv /tmp/app.jar /www/wwwroot/expat-compass/backend/app.jar
+            sudo chown www:www /www/wwwroot/expat-compass/backend/app.jar 2>/dev/null || chown www:www /www/wwwroot/expat-compass/backend/app.jar 2>/dev/null || true
+          EOF
 
       - name: Restart backend service
         run: |
           SERVER_PORT="${{ secrets.SERVER_PORT || '22' }}"
-          ssh -p "${SERVER_PORT}" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
+          SERVER_USER="${{ secrets.SERVER_USER }}"
+          SERVER_HOST="${{ secrets.SERVER_HOST }}"
+          ssh -p "${SERVER_PORT}" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "${SERVER_USER}@${SERVER_HOST}" << 'EOF'
             # 如果使用 systemd 服务
-            if systemctl is-active --quiet expat-compass 2>/dev/null; then
+            if sudo systemctl is-active --quiet expat-compass 2>/dev/null || systemctl is-active --quiet expat-compass 2>/dev/null; then
               echo "Restarting via systemd..."
               sudo systemctl restart expat-compass
               sleep 3
@@ -170,11 +186,12 @@ jobs:
             else
               # 否则使用进程管理
               echo "Stopping old process..."
-              pkill -f "java.*app.jar" || true
+              sudo pkill -f "java.*app.jar" || pkill -f "java.*app.jar" || true
               sleep 2
               
               echo "Starting new process..."
               cd /www/wwwroot/expat-compass/backend
+              sudo -u www nohup java -jar -Xms512m -Xmx1024m -Dspring.profiles.active=prod app.jar > logs/app.log 2>&1 & || \
               nohup java -jar -Xms512m -Xmx1024m -Dspring.profiles.active=prod app.jar > logs/app.log 2>&1 &
               sleep 5
               
