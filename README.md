@@ -144,11 +144,6 @@ API 服务运行在 http://localhost:8080
 
 本项目采用 MIT 许可证。
 
-## 相关链接
-
-- [GitHub 项目地址](https://github.com/auberginewly/expat-compass)
-- [项目申报书](./docs/项目申报书.pdf)
-
 ## 贡献
 
 欢迎提交 Issue 和 Pull Request！
