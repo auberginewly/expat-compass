@@ -69,6 +69,11 @@ jobs:
 
       - name: Create deployment directories
         run: |
+          if [ -z "${{ secrets.SERVER_HOST }}" ]; then
+            echo "❌ Error: SERVER_HOST secret is not set"
+            exit 1
+          fi
+          echo "Connecting to ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}"
           ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
             mkdir -p /www/wwwroot/expat-compass/{frontend,backend/uploads,backend/logs}
             chown -R www:www /www/wwwroot/expat-compass
