@@ -194,13 +194,16 @@ jobs:
               
               echo "Starting new process..."
               cd /www/wwwroot/expat-compass/backend
-              if sudo -u www nohup java -jar -Xms512m -Xmx1024m -Dspring.profiles.active=prod app.jar > logs/app.log 2>&1 &; then
-                echo "Started with sudo -u www"
-              else
+              # 尝试使用 sudo -u www 启动
+              sudo -u www nohup java -jar -Xms512m -Xmx1024m -Dspring.profiles.active=prod app.jar > logs/app.log 2>&1 &
+              # 等待一下，检查是否启动成功
+              sleep 2
+              if ! pgrep -f "java.*app.jar" > /dev/null; then
                 echo "Failed with sudo -u www, trying without sudo..."
                 nohup java -jar -Xms512m -Xmx1024m -Dspring.profiles.active=prod app.jar > logs/app.log 2>&1 &
+                sleep 2
               fi
-              sleep 5
+              sleep 3
               
               # 检查是否启动成功
               if pgrep -f "java.*app.jar" > /dev/null; then
