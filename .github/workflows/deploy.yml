@@ -6,6 +6,22 @@ on:
       - main
       - master
   workflow_dispatch:
+    inputs:
+      skip_build:
+        description: '跳过构建，只更新文件（需要手动上传构建产物）'
+        required: false
+        default: false
+        type: boolean
+      only_frontend:
+        description: '只部署前端'
+        required: false
+        default: false
+        type: boolean
+      only_backend:
+        description: '只部署后端'
+        required: false
+        default: false
+        type: boolean
 
 jobs:
   deploy:
@@ -14,14 +30,73 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 2  # 需要获取历史记录以检测变更
+      
+      - name: Detect changes
+        id: changes
+        run: |
+          # 如果是手动触发且有选项，使用选项
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            if [ "${{ github.event.inputs.skip_build }}" == "true" ]; then
+              echo "build_frontend=false" >> $GITHUB_OUTPUT
+              echo "build_backend=false" >> $GITHUB_OUTPUT
+              echo "skip_build=true" >> $GITHUB_OUTPUT
+            elif [ "${{ github.event.inputs.only_frontend }}" == "true" ]; then
+              echo "build_frontend=true" >> $GITHUB_OUTPUT
+              echo "build_backend=false" >> $GITHUB_OUTPUT
+            elif [ "${{ github.event.inputs.only_backend }}" == "true" ]; then
+              echo "build_frontend=false" >> $GITHUB_OUTPUT
+              echo "build_backend=true" >> $GITHUB_OUTPUT
+            else
+              # 手动触发但没有指定选项，默认都构建
+              echo "build_frontend=true" >> $GITHUB_OUTPUT
+              echo "build_backend=true" >> $GITHUB_OUTPUT
+            fi
+          else
+            # 自动触发，检测文件变更
+            if [ "${{ github.event_name }}" == "push" ] && [ -n "${{ github.event.before }}" ]; then
+              CHANGED_FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }})
+            else
+              CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD 2>/dev/null || echo "")
+            fi
+            
+            FRONTEND_CHANGED=false
+            BACKEND_CHANGED=false
+            
+            if echo "$CHANGED_FILES" | grep -qE "^frontend/|^\.github/workflows/"; then
+              FRONTEND_CHANGED=true
+            fi
+            if echo "$CHANGED_FILES" | grep -qE "^backend/|^\.github/workflows/"; then
+              BACKEND_CHANGED=true
+            fi
+            
+            # 如果没有任何变更或无法检测，默认都构建（安全起见）
+            if [ -z "$CHANGED_FILES" ] || ([ "$FRONTEND_CHANGED" = "false" ] && [ "$BACKEND_CHANGED" = "false" ]); then
+              FRONTEND_CHANGED=true
+              BACKEND_CHANGED=true
+            fi
+            
+            echo "build_frontend=$FRONTEND_CHANGED" >> $GITHUB_OUTPUT
+            echo "build_backend=$BACKEND_CHANGED" >> $GITHUB_OUTPUT
+          fi
+          
+          echo "📊 Change Detection Results:"
+          echo "   Frontend build: ${{ steps.changes.outputs.build_frontend }}"
+          echo "   Backend build: ${{ steps.changes.outputs.build_backend }}"
+          if [ "${{ steps.changes.outputs.skip_build }}" == "true" ]; then
+            echo "   ⚠️  Skip build mode: Only deploying existing artifacts"
+          fi
 
       # 构建前端
       - name: Install pnpm
+        if: steps.changes.outputs.build_frontend == 'true'
         uses: pnpm/action-setup@v4
         with:
           version: 10
 
       - name: Setup Node.js
+        if: steps.changes.outputs.build_frontend == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: '18'
@@ -29,6 +104,7 @@ jobs:
           cache-dependency-path: frontend/pnpm-lock.yaml
 
       - name: Install frontend dependencies
+        if: steps.changes.outputs.build_frontend == 'true'
         working-directory: ./frontend
         run: |
           # 如果 lockfile 存在，使用 frozen-lockfile；否则正常安装
@@ -39,12 +115,14 @@ jobs:
           fi
 
       - name: Build frontend
+        if: steps.changes.outputs.build_frontend == 'true'
         working-directory: ./frontend
         run: pnpm build
         # 注意：同域部署时，前端使用相对路径 /api，无需设置 VITE_API_BASE_URL
 
       # 构建后端
       - name: Setup Java
+        if: steps.changes.outputs.build_backend == 'true'
         uses: actions/setup-java@v4
         with:
           java-version: '17'
@@ -52,6 +130,7 @@ jobs:
           cache: maven
 
       - name: Build backend
+        if: steps.changes.outputs.build_backend == 'true'
         working-directory: ./backend
         run: ./mvnw clean package -DskipTests
 
@@ -138,10 +217,18 @@ jobs:
           EOF
 
       - name: Deploy frontend
+        if: steps.changes.outputs.build_frontend == 'true'
         run: |
           SERVER_PORT="${{ secrets.SERVER_PORT || '22' }}"
           SERVER_USER="${{ secrets.SERVER_USER }}"
           SERVER_HOST="${{ secrets.SERVER_HOST }}"
+          
+          # 检查前端构建产物是否存在
+          if [ ! -d "frontend/dist" ] || [ -z "$(ls -A frontend/dist 2>/dev/null)" ]; then
+            echo "⚠️  Warning: frontend/dist is empty or does not exist, skipping frontend deployment"
+            exit 0
+          fi
+          
           # 清空旧文件（保留 .htaccess 等配置文件）
           ssh -p "${SERVER_PORT}" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "${SERVER_USER}@${SERVER_HOST}" "sudo rm -rf /www/wwwroot/expat-compass/frontend/* || rm -rf /www/wwwroot/expat-compass/frontend/*"
           # 创建临时目录（使用用户主目录，避免 /tmp 权限问题）
@@ -154,8 +241,10 @@ jobs:
             sudo chown -R www:www /www/wwwroot/expat-compass/frontend 2>/dev/null || chown -R www:www /www/wwwroot/expat-compass/frontend 2>/dev/null || true
             rm -rf ~/expat-compass-frontend
           EOF
+          echo "✅ Frontend deployed successfully"
 
       - name: Deploy backend
+        if: steps.changes.outputs.build_backend == 'true'
         run: |
           SERVER_PORT="${{ secrets.SERVER_PORT || '22' }}"
           SERVER_USER="${{ secrets.SERVER_USER }}"
@@ -202,6 +291,7 @@ jobs:
           EOF
 
       - name: Restart backend service
+        if: steps.changes.outputs.build_backend == 'true'
         run: |
           SERVER_PORT="${{ secrets.SERVER_PORT || '22' }}"
           SERVER_USER="${{ secrets.SERVER_USER }}"
@@ -315,10 +405,10 @@ jobs:
               LOG_FILE="/www/wwwroot/expat-compass/backend/logs/app.log"
               JAR_FILE="/www/wwwroot/expat-compass/backend/app.jar"
               
-              # 检查端口是否被占用
-              if lsof -i :8080 > /dev/null 2>&1; then
+              # 检查端口是否被占用（使用不需要 root 权限的方法）
+              if ss -tln 2>/dev/null | grep -q ":8080" || netstat -tln 2>/dev/null | grep -q ":8080"; then
                 echo "⚠️  Warning: Port 8080 is already in use"
-                lsof -i :8080 || true
+                ss -tln 2>/dev/null | grep 8080 || netstat -tln 2>/dev/null | grep 8080 || true
               fi
               
               # 确保日志文件存在且可写
@@ -368,7 +458,7 @@ jobs:
                 echo "Process info:"
                 ps aux | grep "java.*app.jar" | grep -v grep || true
                 echo "Port 8080 status:"
-                lsof -i :8080 || netstat -tlnp | grep 8080 || true
+                ss -tln 2>/dev/null | grep 8080 || netstat -tln 2>/dev/null | grep 8080 || echo "Port 8080 not listening yet (may need more time)"
               else
                 echo "❌ Backend service failed to start"
                 echo "Checking log file..."
@@ -441,9 +531,9 @@ jobs:
             # 检查应用端口
             echo ""
             echo "Checking application port 8080..."
-            if netstat -tlnp 2>/dev/null | grep -q ":8080" || ss -tlnp 2>/dev/null | grep -q ":8080"; then
+            if ss -tln 2>/dev/null | grep -q ":8080" || netstat -tln 2>/dev/null | grep -q ":8080"; then
               echo "✅ Port 8080 is listening"
-              netstat -tlnp 2>/dev/null | grep 8080 || ss -tlnp 2>/dev/null | grep 8080
+              ss -tln 2>/dev/null | grep 8080 || netstat -tln 2>/dev/null | grep 8080
             else
               echo "⚠️  Port 8080 is not listening yet (application may still be starting)"
             fi
@@ -451,23 +541,43 @@ jobs:
             # 健康检查（增加重试次数和等待时间）
             echo ""
             echo "Starting health check..."
+            PORT_LISTENING=false
             for i in {1..20}; do
-              # 先检查端口是否监听
-              if netstat -tlnp 2>/dev/null | grep -q ":8080" || ss -tlnp 2>/dev/null | grep -q ":8080"; then
+              # 先检查端口是否监听（使用不需要 root 权限的方法）
+              if ss -tln 2>/dev/null | grep -q ":8080" || netstat -tln 2>/dev/null | grep -q ":8080"; then
+                PORT_LISTENING=true
                 # 尝试健康检查
                 if curl -f -s http://localhost:8080/api/health > /dev/null 2>&1; then
                   echo "✅ Health check passed!"
                   exit 0
                 fi
                 # 如果端口监听但健康检查失败，显示响应内容
-                RESPONSE=$(curl -s http://localhost:8080/api/health 2>&1 || echo "连接失败")
-                if [ "$i" -eq 10 ] || [ "$i" -eq 20 ]; then
-                  echo "   健康检查响应: $RESPONSE"
+                RESPONSE=$(curl -s -w "\nHTTP Status: %{http_code}" http://localhost:8080/api/health 2>&1 || echo "连接失败")
+                if [ "$i" -eq 5 ] || [ "$i" -eq 10 ] || [ "$i" -eq 15 ] || [ "$i" -eq 20 ]; then
+                  echo "   健康检查响应 (尝试 $i/20): $RESPONSE"
+                  # 显示应用日志的最后几行
+                  echo "   应用日志 (最后 10 行):"
+                  tail -10 /www/wwwroot/expat-compass/backend/logs/app.log 2>/dev/null | sed 's/^/     /' || echo "     (无日志)"
+                fi
+              else
+                # 端口未监听，显示应用日志
+                if [ "$i" -eq 5 ] || [ "$i" -eq 10 ]; then
+                  echo "   端口 8080 尚未监听，检查应用状态..."
+                  echo "   应用进程:"
+                  ps aux | grep "java.*app.jar" | grep -v grep | head -1 || echo "     (未找到进程)"
+                  echo "   应用日志 (最后 20 行):"
+                  tail -20 /www/wwwroot/expat-compass/backend/logs/app.log 2>/dev/null | sed 's/^/     /' || echo "     (无日志)"
                 fi
               fi
               echo "Attempt $i/20: Service not ready, waiting..."
               sleep 5  # 增加等待时间到 5 秒
             done
+            
+            # 如果端口一直未监听，显示更多信息
+            if [ "$PORT_LISTENING" = "false" ]; then
+              echo ""
+              echo "⚠️  端口 8080 在 100 秒内一直未监听，应用可能启动失败"
+            fi
             
             echo "❌ Health check failed after 20 attempts"
             echo ""
@@ -475,7 +585,7 @@ jobs:
             ps aux | grep "java.*app.jar" | grep -v grep || echo "No Java process found"
             echo ""
             echo "=== Port 8080 Status ==="
-            netstat -tlnp 2>/dev/null | grep 8080 || ss -tlnp 2>/dev/null | grep 8080 || echo "Port 8080 is not listening"
+            ss -tln 2>/dev/null | grep 8080 || netstat -tln 2>/dev/null | grep 8080 || echo "Port 8080 is not listening"
             echo ""
             echo "=== Last 100 lines of application log ==="
             tail -100 /www/wwwroot/expat-compass/backend/logs/app.log 2>/dev/null || echo "日志文件不存在或为空"
