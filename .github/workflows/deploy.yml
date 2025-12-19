@@ -402,6 +402,22 @@ jobs:
             echo "Waiting for service to start..."
             sleep 10
             
+            # 检查 PostgreSQL 是否运行
+            echo "Checking PostgreSQL status..."
+            if ! sudo systemctl is-active --quiet postgresql 2>/dev/null && ! systemctl is-active --quiet postgresql 2>/dev/null; then
+              echo "⚠️  Warning: PostgreSQL service is not running"
+              echo "Please start PostgreSQL: sudo systemctl start postgresql"
+            else
+              echo "✅ PostgreSQL service is running"
+            fi
+            
+            # 检查端口是否监听
+            if ! netstat -tlnp 2>/dev/null | grep -q ":5432" && ! ss -tlnp 2>/dev/null | grep -q ":5432"; then
+              echo "⚠️  Warning: PostgreSQL is not listening on port 5432"
+            else
+              echo "✅ PostgreSQL is listening on port 5432"
+            fi
+            
             # 健康检查
             for i in {1..10}; do
               if curl -f http://localhost:8080/api/health > /dev/null 2>&1; then
@@ -413,7 +429,15 @@ jobs:
             done
             
             echo "❌ Health check failed"
-            tail -30 /www/wwwroot/expat-compass/backend/logs/app.log || true
+            echo ""
+            echo "=== Last 50 lines of application log ==="
+            tail -50 /www/wwwroot/expat-compass/backend/logs/app.log || true
+            echo ""
+            echo "=== Checking if application process is running ==="
+            ps aux | grep "java.*app.jar" | grep -v grep || echo "No Java process found"
+            echo ""
+            echo "=== Checking if port 8080 is listening ==="
+            netstat -tlnp 2>/dev/null | grep 8080 || ss -tlnp 2>/dev/null | grep 8080 || echo "Port 8080 is not listening"
             exit 1
           EOF
 
