@@ -119,7 +119,7 @@ const AppFooter = () => {
               </li>
               <li>
                 <a
-                  href="https://github.com/expat-compass/nanchang-expat-platform"
+                  href="https://github.com/auberginewly/expat-compass"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-sm text-gray-600 dark:text-gray-400 hover:text-primary-gradientStart transition-colors flex items-center gap-1"
