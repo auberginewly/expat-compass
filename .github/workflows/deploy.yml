@@ -142,13 +142,15 @@ jobs:
           SERVER_HOST="${{ secrets.SERVER_HOST }}"
           # 清空旧文件（保留 .htaccess 等配置文件）
           ssh -p "${SERVER_PORT}" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "${SERVER_USER}@${SERVER_HOST}" "sudo rm -rf /www/wwwroot/expat-compass/frontend/* || rm -rf /www/wwwroot/expat-compass/frontend/*"
+          # 创建临时目录（使用用户主目录，避免 /tmp 权限问题）
+          ssh -p "${SERVER_PORT}" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "${SERVER_USER}@${SERVER_HOST}" "mkdir -p ~/expat-compass-frontend && rm -rf ~/expat-compass-frontend/*"
           # 上传新文件到临时目录
-          scp -P "${SERVER_PORT}" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -r frontend/dist/* "${SERVER_USER}@${SERVER_HOST}:/tmp/expat-compass-frontend/"
+          scp -P "${SERVER_PORT}" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -r frontend/dist/* "${SERVER_USER}@${SERVER_HOST}:~/expat-compass-frontend/"
           # 移动文件到目标目录并设置权限
           ssh -p "${SERVER_PORT}" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "${SERVER_USER}@${SERVER_HOST}" << 'EOF'
-            sudo mv /tmp/expat-compass-frontend/* /www/wwwroot/expat-compass/frontend/ 2>/dev/null || mv /tmp/expat-compass-frontend/* /www/wwwroot/expat-compass/frontend/
+            sudo mv ~/expat-compass-frontend/* /www/wwwroot/expat-compass/frontend/ 2>/dev/null || mv ~/expat-compass-frontend/* /www/wwwroot/expat-compass/frontend/
             sudo chown -R www:www /www/wwwroot/expat-compass/frontend 2>/dev/null || chown -R www:www /www/wwwroot/expat-compass/frontend 2>/dev/null || true
-            rm -rf /tmp/expat-compass-frontend
+            rm -rf ~/expat-compass-frontend
           EOF
 
       - name: Deploy backend
@@ -163,12 +165,13 @@ jobs:
               cp /www/wwwroot/expat-compass/backend/app.jar /www/wwwroot/expat-compass/backend/app.jar.backup.$(date +%Y%m%d%H%M%S)
             fi
           EOF
-          # 上传新 JAR 到临时目录
-          scp -P "${SERVER_PORT}" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null backend/target/*.jar "${SERVER_USER}@${SERVER_HOST}:/tmp/app.jar"
+          # 上传新 JAR 到用户主目录（避免 /tmp 权限问题）
+          scp -P "${SERVER_PORT}" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null backend/target/*.jar "${SERVER_USER}@${SERVER_HOST}:~/app.jar"
           # 移动文件到目标目录并设置权限
           ssh -p "${SERVER_PORT}" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "${SERVER_USER}@${SERVER_HOST}" << 'EOF'
-            sudo mv /tmp/app.jar /www/wwwroot/expat-compass/backend/app.jar 2>/dev/null || mv /tmp/app.jar /www/wwwroot/expat-compass/backend/app.jar
+            sudo mv ~/app.jar /www/wwwroot/expat-compass/backend/app.jar 2>/dev/null || mv ~/app.jar /www/wwwroot/expat-compass/backend/app.jar
             sudo chown www:www /www/wwwroot/expat-compass/backend/app.jar 2>/dev/null || chown www:www /www/wwwroot/expat-compass/backend/app.jar 2>/dev/null || true
+            rm -f ~/app.jar
           EOF
 
       - name: Restart backend service
