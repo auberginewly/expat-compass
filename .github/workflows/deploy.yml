@@ -63,8 +63,11 @@ jobs:
 
       - name: Add server to known hosts
         run: |
-          mkdir -p ~/.ssh
-          ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
+          if [ ! -d ~/.ssh ]; then
+            mkdir -p ~/.ssh
+            chmod 700 ~/.ssh
+          fi
+          ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts 2>&1
 
       - name: Create deployment directories
         run: |
