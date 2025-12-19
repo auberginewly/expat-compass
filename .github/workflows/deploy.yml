@@ -197,14 +197,21 @@ jobs:
               # 确保 logs 目录存在并有写权限
               sudo mkdir -p logs || mkdir -p logs
               sudo chmod 755 logs || chmod 755 logs
-              sudo chown -R www:www logs 2>/dev/null || chown -R www:www logs 2>/dev/null || true
+              # 创建日志文件并设置权限
+              sudo touch logs/app.log || touch logs/app.log
+              sudo chmod 644 logs/app.log || chmod 644 logs/app.log
+              sudo chown www:www logs/app.log 2>/dev/null || chown www:www logs/app.log 2>/dev/null || true
+              # 使用绝对路径
+              LOG_FILE="/www/wwwroot/expat-compass/backend/logs/app.log"
               # 尝试使用 sudo -u www 启动
-              sudo -u www nohup java -jar -Xms512m -Xmx1024m -Dspring.profiles.active=prod app.jar > logs/app.log 2>&1 &
+              sudo -u www nohup java -jar -Xms512m -Xmx1024m -Dspring.profiles.active=prod app.jar > "$LOG_FILE" 2>&1 &
               # 等待一下，检查是否启动成功
               sleep 2
               if ! pgrep -f "java.*app.jar" > /dev/null; then
                 echo "Failed with sudo -u www, trying without sudo..."
-                nohup java -jar -Xms512m -Xmx1024m -Dspring.profiles.active=prod app.jar > logs/app.log 2>&1 &
+                # 如果 sudo 失败，使用当前用户权限
+                sudo chmod 666 logs/app.log 2>/dev/null || chmod 666 logs/app.log 2>/dev/null || true
+                nohup java -jar -Xms512m -Xmx1024m -Dspring.profiles.active=prod app.jar > "$LOG_FILE" 2>&1 &
                 sleep 2
               fi
               sleep 3
@@ -214,11 +221,13 @@ jobs:
                 echo "✅ Backend service started successfully"
               else
                 echo "❌ Backend service failed to start"
-                if [ -f logs/app.log ]; then
-                  tail -20 logs/app.log
+                if [ -f "$LOG_FILE" ]; then
+                  tail -20 "$LOG_FILE"
                 else
                   echo "Log file not found, checking process..."
                   ps aux | grep java || true
+                  echo "Checking directory permissions..."
+                  ls -la /www/wwwroot/expat-compass/backend/logs/ || true
                 fi
                 exit 1
               fi
