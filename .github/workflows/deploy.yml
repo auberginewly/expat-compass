@@ -80,17 +80,55 @@ jobs:
 
       - name: Create deployment directories
         run: |
-          if [ -z "${{ secrets.SERVER_HOST }}" ]; then
+          SERVER_HOST="${{ secrets.SERVER_HOST }}"
+          SERVER_USER="${{ secrets.SERVER_USER }}"
+          SERVER_PORT="${{ secrets.SERVER_PORT || '22' }}"
+          
+          echo "🔍 ===== 配置验证 ====="
+          if [ -z "${SERVER_HOST}" ]; then
             echo "❌ Error: SERVER_HOST secret is not set"
             exit 1
           fi
-          SERVER_PORT="${{ secrets.SERVER_PORT || '22' }}"
-          echo "🔍 Debug: Connecting to ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:${SERVER_PORT}"
-          echo "🔍 Debug: SERVER_HOST format check..."
-          if [[ ! "${{ secrets.SERVER_HOST }}" =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
-            echo "⚠️  Warning: SERVER_HOST may not be a valid IP address format"
+          
+          if [ -z "${SERVER_USER}" ]; then
+            echo "❌ Error: SERVER_USER secret is not set"
+            exit 1
           fi
-          ssh -p "${SERVER_PORT}" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
+          
+          echo "✅ SERVER_HOST: ${SERVER_HOST}"
+          echo "✅ SERVER_USER: ${SERVER_USER}"
+          echo "✅ SERVER_PORT: ${SERVER_PORT}"
+          
+          # 严格验证 IP 格式
+          echo ""
+          echo "🔍 验证 SERVER_HOST 格式..."
+          if [[ "${SERVER_HOST}" =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
+            # 验证每个数字段
+            IFS='.' read -ra ADDR <<< "${SERVER_HOST}"
+            VALID=true
+            for i in "${ADDR[@]}"; do
+              if [[ $i -lt 0 ]] || [[ $i -gt 255 ]]; then
+                echo "❌ 错误：数字段 $i 不在有效范围内 (0-255)"
+                VALID=false
+              fi
+            done
+            if [ "$VALID" = true ]; then
+              echo "✅ SERVER_HOST 格式正确: ${SERVER_HOST}"
+            else
+              echo "❌ SERVER_HOST 格式错误"
+              exit 1
+            fi
+          else
+            echo "❌ 错误：SERVER_HOST 不是有效的 IPv4 格式"
+            echo "   当前值: ${SERVER_HOST}"
+            echo "   正确格式应该是: xxx.xxx.xxx.xxx (例如: 43.143.124.38)"
+            echo "   请检查 GitHub Secrets 中的 SERVER_HOST 值"
+            exit 1
+          fi
+          
+          echo ""
+          echo "🔍 正在连接到 ${SERVER_USER}@${SERVER_HOST}:${SERVER_PORT}"
+          ssh -p "${SERVER_PORT}" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=10 "${SERVER_USER}@${SERVER_HOST}" << 'EOF'
             mkdir -p /www/wwwroot/expat-compass/{frontend,backend/uploads,backend/logs}
             chown -R www:www /www/wwwroot/expat-compass
           EOF
