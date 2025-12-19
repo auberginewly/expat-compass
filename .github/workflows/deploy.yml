@@ -221,16 +221,64 @@ jobs:
               echo "Checking Java installation..."
               if ! command -v java &> /dev/null; then
                 echo "Java not found, installing OpenJDK 17..."
-                sudo apt-get update -qq
-                sudo apt-get install -y openjdk-17-jdk
+                # 更新包列表，忽略部分包的404错误
+                sudo apt-get update -qq || true
+                # 尝试安装，如果失败则尝试修复
+                if ! sudo apt-get install -y openjdk-17-jdk; then
+                  echo "⚠️  First install attempt failed, trying with --fix-missing..."
+                  sudo apt-get install -y --fix-missing openjdk-17-jdk || {
+                    echo "⚠️  Install with --fix-missing failed, trying alternative method..."
+                    # 尝试只安装 JRE
+                    sudo apt-get install -y openjdk-17-jre || {
+                      echo "❌ Failed to install Java. Trying to find existing Java installation..."
+                      # 查找系统中可能存在的 Java
+                      if [ -d /usr/lib/jvm ]; then
+                        echo "Found Java installations in /usr/lib/jvm:"
+                        ls -la /usr/lib/jvm/ || true
+                        # 尝试使用找到的 Java
+                        for java_dir in /usr/lib/jvm/*/bin/java; do
+                          if [ -x "$java_dir" ]; then
+                            echo "Using found Java: $java_dir"
+                            sudo ln -sf "$java_dir" /usr/local/bin/java || true
+                            break
+                          fi
+                        done
+                      fi
+                    }
+                  }
+                fi
+              fi
+              
+              # 再次检查 Java
+              if ! command -v java &> /dev/null; then
+                # 尝试查找 Java 的完整路径
+                JAVA_PATHS=(
+                  "/usr/bin/java"
+                  "/usr/lib/jvm/java-17-openjdk-amd64/bin/java"
+                  "/usr/lib/jvm/java-17-openjdk/bin/java"
+                  "/usr/lib/jvm/default-java/bin/java"
+                )
+                JAVA_CMD=""
+                for path in "${JAVA_PATHS[@]}"; do
+                  if [ -x "$path" ]; then
+                    JAVA_CMD="$path"
+                    echo "✅ Found Java at: $JAVA_CMD"
+                    break
+                  fi
+                done
+                
+                if [ -z "$JAVA_CMD" ]; then
+                  echo "❌ Error: Java not found and installation failed"
+                  echo "Please install Java manually: sudo apt-get install -y openjdk-17-jdk"
+                  exit 1
+                fi
+              else
+                JAVA_CMD=$(which java)
               fi
               
               # 验证 Java 版本
-              JAVA_VERSION=$(java -version 2>&1 | head -n 1 || echo "")
+              JAVA_VERSION=$("$JAVA_CMD" -version 2>&1 | head -n 1 || echo "")
               echo "Java version: $JAVA_VERSION"
-              
-              # 查找 Java 可执行文件的完整路径
-              JAVA_CMD=$(which java || echo "java")
               echo "Using Java: $JAVA_CMD"
               
               echo "Starting new process..."
@@ -246,11 +294,20 @@ jobs:
               
               # 确保 logs 目录存在并有写权限
               sudo mkdir -p logs || mkdir -p logs
-              sudo chmod 755 logs || chmod 755 logs
-              # 创建日志文件并设置权限
-              sudo touch logs/app.log || touch logs/app.log
-              sudo chmod 644 logs/app.log || chmod 644 logs/app.log
+              sudo chmod 777 logs || chmod 777 logs  # 临时放宽权限以确保可以写入
+              # 删除旧的日志文件（如果存在）
+              sudo rm -f logs/app.log || rm -f logs/app.log
+              # 创建日志文件并设置权限（使用 sudo -u www 创建，确保所有者正确）
+              sudo -u www touch logs/app.log 2>/dev/null || touch logs/app.log
+              # 设置权限，确保 www 用户可以写入
+              sudo chmod 666 logs/app.log 2>/dev/null || chmod 666 logs/app.log 2>/dev/null || true
               sudo chown www:www logs/app.log 2>/dev/null || chown www:www logs/app.log 2>/dev/null || true
+              # 验证文件是否创建成功
+              if [ ! -f logs/app.log ]; then
+                echo "⚠️  Warning: Failed to create log file, will try to create during startup"
+              else
+                echo "✅ Log file created: $(ls -lh logs/app.log)"
+              fi
               
               # 使用绝对路径
               LOG_FILE="/www/wwwroot/expat-compass/backend/logs/app.log"
@@ -262,18 +319,32 @@ jobs:
                 lsof -i :8080 || true
               fi
               
+              # 确保日志文件存在且可写
+              if [ ! -f "$LOG_FILE" ]; then
+                sudo -u www touch "$LOG_FILE" 2>/dev/null || touch "$LOG_FILE"
+                sudo chmod 666 "$LOG_FILE" 2>/dev/null || chmod 666 "$LOG_FILE" 2>/dev/null || true
+                sudo chown www:www "$LOG_FILE" 2>/dev/null || chown www:www "$LOG_FILE" 2>/dev/null || true
+              fi
+              
               # 尝试使用 sudo -u www 启动
               echo "Starting with: $JAVA_CMD -jar -Xms512m -Xmx1024m -Dspring.profiles.active=prod $JAR_FILE"
-              sudo -u www nohup "$JAVA_CMD" -jar -Xms512m -Xmx1024m -Dspring.profiles.active=prod "$JAR_FILE" > "$LOG_FILE" 2>&1 &
+              # 切换到日志目录，确保可以写入
+              cd /www/wwwroot/expat-compass/backend
+              sudo -u www bash -c "cd /www/wwwroot/expat-compass/backend && nohup $JAVA_CMD -jar -Xms512m -Xmx1024m -Dspring.profiles.active=prod $JAR_FILE > $LOG_FILE 2>&1 &" || {
+                echo "Failed with sudo -u www, trying without sudo..."
+                nohup "$JAVA_CMD" -jar -Xms512m -Xmx1024m -Dspring.profiles.active=prod "$JAR_FILE" > "$LOG_FILE" 2>&1 &
+              }
               # 等待一下，检查是否启动成功
               sleep 2
+              sleep 2
               if ! pgrep -f "java.*app.jar" > /dev/null; then
-                echo "Failed with sudo -u www, trying without sudo..."
-                # 如果 sudo 失败，使用当前用户权限
-                sudo chmod 666 logs/app.log 2>/dev/null || chmod 666 logs/app.log 2>/dev/null || true
+                echo "Process not found, checking if it started..."
+                # 如果进程不存在，尝试不使用 sudo 启动
+                sudo chmod 666 "$LOG_FILE" 2>/dev/null || chmod 666 "$LOG_FILE" 2>/dev/null || true
                 echo "Starting without sudo: $JAVA_CMD -jar -Xms512m -Xmx1024m -Dspring.profiles.active=prod $JAR_FILE"
+                cd /www/wwwroot/expat-compass/backend
                 nohup "$JAVA_CMD" -jar -Xms512m -Xmx1024m -Dspring.profiles.active=prod "$JAR_FILE" > "$LOG_FILE" 2>&1 &
-                sleep 2
+                sleep 3
               fi
               sleep 3
               
