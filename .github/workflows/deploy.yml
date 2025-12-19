@@ -158,6 +158,17 @@ jobs:
           SERVER_PORT="${{ secrets.SERVER_PORT || '22' }}"
           SERVER_USER="${{ secrets.SERVER_USER }}"
           SERVER_HOST="${{ secrets.SERVER_HOST }}"
+          
+          # 检查 JAR 文件是否存在
+          JAR_FILE=$(find backend/target -name "*.jar" ! -name "*-sources.jar" ! -name "*-javadoc.jar" | head -n 1)
+          if [ -z "$JAR_FILE" ]; then
+            echo "❌ Error: JAR file not found in backend/target/"
+            echo "Available files:"
+            ls -la backend/target/ || true
+            exit 1
+          fi
+          echo "✅ Found JAR file: $JAR_FILE"
+          
           # 备份旧版本
           ssh -p "${SERVER_PORT}" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "${SERVER_USER}@${SERVER_HOST}" << 'EOF'
             if [ -f /www/wwwroot/expat-compass/backend/app.jar ]; then
@@ -165,12 +176,26 @@ jobs:
               cp /www/wwwroot/expat-compass/backend/app.jar /www/wwwroot/expat-compass/backend/app.jar.backup.$(date +%Y%m%d%H%M%S)
             fi
           EOF
+          
           # 上传新 JAR 到用户主目录（避免 /tmp 权限问题）
-          scp -P "${SERVER_PORT}" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null backend/target/*.jar "${SERVER_USER}@${SERVER_HOST}:~/app.jar"
+          scp -P "${SERVER_PORT}" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "$JAR_FILE" "${SERVER_USER}@${SERVER_HOST}:~/app.jar"
+          
           # 移动文件到目标目录并设置权限
           ssh -p "${SERVER_PORT}" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "${SERVER_USER}@${SERVER_HOST}" << 'EOF'
+            if [ ! -f ~/app.jar ]; then
+              echo "❌ Error: app.jar not found in home directory"
+              exit 1
+            fi
             sudo mv ~/app.jar /www/wwwroot/expat-compass/backend/app.jar 2>/dev/null || mv ~/app.jar /www/wwwroot/expat-compass/backend/app.jar
+            if [ ! -f /www/wwwroot/expat-compass/backend/app.jar ]; then
+              echo "❌ Error: Failed to move app.jar to target directory"
+              exit 1
+            fi
+            # 设置文件权限（可执行）
+            sudo chmod 755 /www/wwwroot/expat-compass/backend/app.jar 2>/dev/null || chmod 755 /www/wwwroot/expat-compass/backend/app.jar 2>/dev/null || true
             sudo chown www:www /www/wwwroot/expat-compass/backend/app.jar 2>/dev/null || chown www:www /www/wwwroot/expat-compass/backend/app.jar 2>/dev/null || true
+            echo "✅ JAR file deployed successfully"
+            ls -lh /www/wwwroot/expat-compass/backend/app.jar || true
             rm -f ~/app.jar
           EOF
 
@@ -192,8 +217,33 @@ jobs:
               sudo pkill -f "java.*app.jar" || pkill -f "java.*app.jar" || true
               sleep 2
               
+              # 检查并安装 Java 环境
+              echo "Checking Java installation..."
+              if ! command -v java &> /dev/null; then
+                echo "Java not found, installing OpenJDK 17..."
+                sudo apt-get update -qq
+                sudo apt-get install -y openjdk-17-jdk
+              fi
+              
+              # 验证 Java 版本
+              JAVA_VERSION=$(java -version 2>&1 | head -n 1 || echo "")
+              echo "Java version: $JAVA_VERSION"
+              
+              # 查找 Java 可执行文件的完整路径
+              JAVA_CMD=$(which java || echo "java")
+              echo "Using Java: $JAVA_CMD"
+              
               echo "Starting new process..."
-              cd /www/wwwroot/expat-compass/backend
+              cd /www/wwwroot/expat-compass/backend || { echo "❌ Error: Cannot cd to backend directory"; exit 1; }
+              
+              # 检查 app.jar 是否存在
+              if [ ! -f app.jar ]; then
+                echo "❌ Error: app.jar not found in /www/wwwroot/expat-compass/backend/"
+                ls -la /www/wwwroot/expat-compass/backend/ || true
+                exit 1
+              fi
+              echo "✅ Found app.jar: $(ls -lh app.jar)"
+              
               # 确保 logs 目录存在并有写权限
               sudo mkdir -p logs || mkdir -p logs
               sudo chmod 755 logs || chmod 755 logs
@@ -201,34 +251,61 @@ jobs:
               sudo touch logs/app.log || touch logs/app.log
               sudo chmod 644 logs/app.log || chmod 644 logs/app.log
               sudo chown www:www logs/app.log 2>/dev/null || chown www:www logs/app.log 2>/dev/null || true
+              
               # 使用绝对路径
               LOG_FILE="/www/wwwroot/expat-compass/backend/logs/app.log"
+              JAR_FILE="/www/wwwroot/expat-compass/backend/app.jar"
+              
+              # 检查端口是否被占用
+              if lsof -i :8080 > /dev/null 2>&1; then
+                echo "⚠️  Warning: Port 8080 is already in use"
+                lsof -i :8080 || true
+              fi
+              
               # 尝试使用 sudo -u www 启动
-              sudo -u www nohup java -jar -Xms512m -Xmx1024m -Dspring.profiles.active=prod app.jar > "$LOG_FILE" 2>&1 &
+              echo "Starting with: $JAVA_CMD -jar -Xms512m -Xmx1024m -Dspring.profiles.active=prod $JAR_FILE"
+              sudo -u www nohup "$JAVA_CMD" -jar -Xms512m -Xmx1024m -Dspring.profiles.active=prod "$JAR_FILE" > "$LOG_FILE" 2>&1 &
               # 等待一下，检查是否启动成功
               sleep 2
               if ! pgrep -f "java.*app.jar" > /dev/null; then
                 echo "Failed with sudo -u www, trying without sudo..."
                 # 如果 sudo 失败，使用当前用户权限
                 sudo chmod 666 logs/app.log 2>/dev/null || chmod 666 logs/app.log 2>/dev/null || true
-                nohup java -jar -Xms512m -Xmx1024m -Dspring.profiles.active=prod app.jar > "$LOG_FILE" 2>&1 &
+                echo "Starting without sudo: $JAVA_CMD -jar -Xms512m -Xmx1024m -Dspring.profiles.active=prod $JAR_FILE"
+                nohup "$JAVA_CMD" -jar -Xms512m -Xmx1024m -Dspring.profiles.active=prod "$JAR_FILE" > "$LOG_FILE" 2>&1 &
                 sleep 2
               fi
               sleep 3
               
               # 检查是否启动成功
+              sleep 2
               if pgrep -f "java.*app.jar" > /dev/null; then
                 echo "✅ Backend service started successfully"
+                echo "Process info:"
+                ps aux | grep "java.*app.jar" | grep -v grep || true
+                echo "Port 8080 status:"
+                lsof -i :8080 || netstat -tlnp | grep 8080 || true
               else
                 echo "❌ Backend service failed to start"
+                echo "Checking log file..."
                 if [ -f "$LOG_FILE" ]; then
-                  tail -20 "$LOG_FILE"
+                  echo "=== Last 30 lines of log ==="
+                  tail -30 "$LOG_FILE"
                 else
-                  echo "Log file not found, checking process..."
-                  ps aux | grep java || true
-                  echo "Checking directory permissions..."
-                  ls -la /www/wwwroot/expat-compass/backend/logs/ || true
+                  echo "Log file not found at: $LOG_FILE"
                 fi
+                echo ""
+                echo "Checking Java processes..."
+                ps aux | grep java | grep -v grep || echo "No Java processes found"
+                echo ""
+                echo "Checking directory structure..."
+                ls -la /www/wwwroot/expat-compass/backend/ || true
+                echo ""
+                echo "Checking file permissions..."
+                ls -lh /www/wwwroot/expat-compass/backend/app.jar || true
+                echo ""
+                echo "Testing Java execution..."
+                "$JAVA_CMD" -version || true
                 exit 1
               fi
             fi
