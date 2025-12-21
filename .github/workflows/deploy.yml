@@ -240,9 +240,18 @@ jobs:
           
           echo "📤 Uploading files..."
           # 上传文件（使用压缩传输可加快速度）
-          # 使用 find + xargs 来避免通配符展开问题，或者直接复制目录内容
-          # 方法：进入 dist 目录，使用 . 来复制所有内容
-          (cd frontend/dist && scp ${SSH_OPTS} -C -r . "${SERVER_USER}@${SERVER_HOST}:~/expat-compass-frontend/")
+          # 验证目录存在且有文件
+          if [ ! -d "frontend/dist" ]; then
+            echo "❌ Error: frontend/dist directory does not exist"
+            exit 1
+          fi
+          
+          # 使用 rsync 风格的 scp：直接复制目录，目标路径以 / 结尾
+          # 但 scp 不支持这种语法，所以使用 tar 管道传输（最可靠的方法）
+          echo "Packaging and uploading files..."
+          cd frontend/dist
+          tar czf - . | ssh ${SSH_OPTS} "${SERVER_USER}@${SERVER_HOST}" "cd ~/expat-compass-frontend && tar xzf -"
+          cd ../..
           
           echo "🚀 Moving files to target directory..."
           # 移动文件并设置权限（一次性完成）
