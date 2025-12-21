@@ -56,13 +56,12 @@ jobs:
           tar czf - . | ssh -p "$PORT" -o StrictHostKeyChecking=no "$SERVER" \
             "mkdir -p ~/frontend-tmp && cd ~/frontend-tmp && tar xzf -"
           
-          ssh -p "$PORT" -o StrictHostKeyChecking=no "$SERVER" << 'EOF'
-sudo mkdir -p /www/wwwroot/expat-compass/frontend
-sudo rm -rf /www/wwwroot/expat-compass/frontend/*
-sudo mv ~/frontend-tmp/* /www/wwwroot/expat-compass/frontend/
-sudo chown -R www:www /www/wwwroot/expat-compass/frontend
-rm -rf ~/frontend-tmp
-EOF
+          ssh -p "$PORT" -o StrictHostKeyChecking=no "$SERVER" \
+            "sudo mkdir -p /www/wwwroot/expat-compass/frontend && \
+             sudo rm -rf /www/wwwroot/expat-compass/frontend/* && \
+             sudo mv ~/frontend-tmp/* /www/wwwroot/expat-compass/frontend/ && \
+             sudo chown -R www:www /www/wwwroot/expat-compass/frontend && \
+             rm -rf ~/frontend-tmp"
       
       - name: Deploy backend
         run: |
@@ -72,43 +71,41 @@ EOF
           JAR_FILE=$(find backend/target -name "*.jar" ! -name "*-sources.jar" | head -n 1)
           scp -P "$PORT" -o StrictHostKeyChecking=no "$JAR_FILE" "$SERVER:~/app.jar"
           
-          ssh -p "$PORT" -o StrictHostKeyChecking=no "$SERVER" << 'EOF'
-BACKEND_DIR="/www/wwwroot/expat-compass/backend"
-sudo mkdir -p "$BACKEND_DIR/logs" "$BACKEND_DIR/tmp"
-sudo mv ~/app.jar "$BACKEND_DIR/app.jar"
-sudo chown -R www:www "$BACKEND_DIR"
-sudo chmod 755 "$BACKEND_DIR/app.jar"
-EOF
+          ssh -p "$PORT" -o StrictHostKeyChecking=no "$SERVER" \
+            "BACKEND_DIR=/www/wwwroot/expat-compass/backend && \
+             sudo mkdir -p \$BACKEND_DIR/logs \$BACKEND_DIR/tmp && \
+             sudo mv ~/app.jar \$BACKEND_DIR/app.jar && \
+             sudo chown -R www:www \$BACKEND_DIR && \
+             sudo chmod 755 \$BACKEND_DIR/app.jar"
       
       - name: Restart backend
         run: |
           SERVER="${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}"
           PORT="${{ secrets.SERVER_PORT || '22' }}"
           
-          ssh -p "$PORT" -o StrictHostKeyChecking=no "$SERVER" << 'EOF'
-sudo pkill -f "java.*app.jar" || true
-sleep 2
-cd /www/wwwroot/expat-compass/backend
-sudo -u www nohup java -Xms512m -Xmx1024m \
-  -Dspring.profiles.active=prod \
-  -Djava.io.tmpdir=/www/wwwroot/expat-compass/backend/tmp \
-  -jar app.jar > logs/app.log 2>&1 &
-EOF
+          ssh -p "$PORT" -o StrictHostKeyChecking=no "$SERVER" \
+            "sudo pkill -f 'java.*app.jar' || true && \
+             sleep 2 && \
+             cd /www/wwwroot/expat-compass/backend && \
+             sudo -u www nohup java -Xms512m -Xmx1024m \
+               -Dspring.profiles.active=prod \
+               -Djava.io.tmpdir=/www/wwwroot/expat-compass/backend/tmp \
+               -jar app.jar > logs/app.log 2>&1 &"
       
       - name: Health check
         run: |
           SERVER="${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}"
           PORT="${{ secrets.SERVER_PORT || '22' }}"
           
-          ssh -p "$PORT" -o StrictHostKeyChecking=no "$SERVER" << 'EOF'
-for i in {1..12}; do
-  if curl -f -s http://localhost:8080/api/health > /dev/null 2>&1; then
-    echo "✅ Health check passed"
-    exit 0
-  fi
-  sleep 5
-done
-echo "❌ Health check failed"
-exit 1
-EOF
+          ssh -p "$PORT" -o StrictHostKeyChecking=no "$SERVER" bash -c "
+            for i in {1..12}; do
+              if curl -f -s http://localhost:8080/api/health > /dev/null 2>&1; then
+                echo '✅ Health check passed'
+                exit 0
+              fi
+              sleep 5
+            done
+            echo '❌ Health check failed'
+            exit 1
+          "
 
