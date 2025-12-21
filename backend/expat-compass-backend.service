@@ -1,33 +1,26 @@
 [Unit]
-Description=Expat Compass Backend Service
+Description=Expat Compass Spring Boot Backend (Layered)
 After=network.target postgresql.service
-Wants=postgresql.service
 
 [Service]
-Type=simple
+# 宝塔默认用户通常是 www
 User=www
 Group=www
 WorkingDirectory=/www/wwwroot/expat-compass/backend
 
-# 使用分层 JAR 启动（Spring Boot 3.3.1 使用新的启动器）
-ExecStart=/usr/bin/java -Xms512m -Xmx1024m -Dspring.profiles.active=prod -Djava.io.tmpdir=/www/wwwroot/expat-compass/backend/tmp org.springframework.boot.loader.launch.JarLauncher
+# 使用 Spring Boot 3.2+ 的分层启动类
+ExecStart=/usr/bin/java -Xms512m -Xmx1024m \
+    -Dspring.profiles.active=prod \
+    -Djava.io.tmpdir=/www/wwwroot/expat-compass/backend/tmp \
+    org.springframework.boot.loader.launch.JarLauncher
 
-# 优雅退出
-SuccessExitStatus=143
-TimeoutStopSec=30
-
-# 自动重启配置
+# 允许应用在崩溃后 10 秒自动重启
 Restart=always
 RestartSec=10
-StartLimitInterval=200
-StartLimitBurst=5
 
-# 日志输出
+# 日志直接交给系统管理或指定文件
 StandardOutput=append:/www/wwwroot/expat-compass/backend/logs/app.log
 StandardError=append:/www/wwwroot/expat-compass/backend/logs/app.log
-
-# 环境变量
-Environment="JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64"
 
 [Install]
 WantedBy=multi-user.target

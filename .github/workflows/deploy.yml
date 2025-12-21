@@ -301,7 +301,7 @@ jobs:
           fi
           
           if [ "$LAYERED_DEPLOY" = true ]; then
-            echo "📤 Uploading layered JAR (optimized)..."
+            echo "📤 Uploading layered JAR using rsync (optimized)..."
             
             # 检查是否需要上传依赖层（pom.xml 是否变化）
             NEED_DEPENDENCIES=false
@@ -317,30 +317,45 @@ jobs:
             fi
             
             # 准备远程目录
+            BACKEND_DIR="/www/wwwroot/expat-compass/backend"
             ssh ${SSH_OPTS} "${SERVER_USER}@${SERVER_HOST}" << 'PREP_EOF'
-mkdir -p ~/backend-layers
-rm -rf ~/backend-layers/*
+BACKEND_DIR="/www/wwwroot/expat-compass/backend"
+sudo mkdir -p "$BACKEND_DIR" || true
 PREP_EOF
             
             # 上传 app.jar（systemd 需要它来启动）
             echo "  Uploading app.jar (launcher)..."
             scp ${SCP_OPTS} -C "$JAR_FILE" "${SERVER_USER}@${SERVER_HOST}:~/app.jar"
             
-            # 上传层（只上传需要的）
+            # 使用 rsync 同步层（支持增量传输和断点续传）
+            # 先同步到用户目录，然后通过 SSH 移动到目标目录（避免权限问题）
+            ssh ${SSH_OPTS} "${SERVER_USER}@${SERVER_HOST}" << 'RSYNC_PREP_EOF'
+mkdir -p ~/rsync-temp
+rm -rf ~/rsync-temp/*
+RSYNC_PREP_EOF
+            
             if [ "$NEED_DEPENDENCIES" = true ]; then
-              echo "  Uploading all layers..."
+              echo "  Syncing all layers with rsync..."
               for layer in dependencies spring-boot-loader snapshot-dependencies application; do
                 if [ -d "$LAYERS_DIR/$layer" ]; then
-                  echo "    Uploading $layer layer..."
-                  (cd "$LAYERS_DIR" && tar czf - "$layer") | ssh ${SSH_OPTS} "${SERVER_USER}@${SERVER_HOST}" "cd ~/backend-layers && tar xzf -"
+                  echo "    Syncing $layer layer..."
+                  rsync -az --delete --progress \
+                    -e "ssh -p ${SERVER_PORT} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o ConnectTimeout=10" \
+                    "$LAYERS_DIR/$layer/" \
+                    "${SERVER_USER}@${SERVER_HOST}:~/rsync-temp/$layer/"
                 fi
               done
             else
-              echo "  Uploading only application layer (dependencies unchanged)..."
-              (cd "$LAYERS_DIR" && tar czf - application) | ssh ${SSH_OPTS} "${SERVER_USER}@${SERVER_HOST}" "cd ~/backend-layers && tar xzf -"
+              echo "  Syncing only application layer (dependencies unchanged)..."
+              if [ -d "$LAYERS_DIR/application" ]; then
+                rsync -az --delete --progress \
+                  -e "ssh -p ${SERVER_PORT} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o ConnectTimeout=10" \
+                  "$LAYERS_DIR/application/" \
+                  "${SERVER_USER}@${SERVER_HOST}:~/rsync-temp/application/"
+              fi
             fi
             
-            # 部署到目标目录
+            # 部署到目标目录并设置权限
             ssh ${SSH_OPTS} "${SERVER_USER}@${SERVER_HOST}" << 'DEPLOY_EOF'
 BACKEND_DIR="/www/wwwroot/expat-compass/backend"
 
@@ -349,30 +364,38 @@ if [ -f "$BACKEND_DIR/app.jar" ]; then
   sudo cp "$BACKEND_DIR/app.jar" "$BACKEND_DIR/app.jar.backup.$(date +%Y%m%d%H%M%S)" 2>/dev/null || true
 fi
 
-# 如果首次部署或需要更新依赖，同步所有层
-if [ ! -d "$BACKEND_DIR/dependencies" ] || [ -d ~/backend-layers/dependencies ]; then
-  echo "  Syncing all layers..."
-  sudo rm -rf "$BACKEND_DIR/dependencies" "$BACKEND_DIR/spring-boot-loader" "$BACKEND_DIR/snapshot-dependencies" "$BACKEND_DIR/application" 2>/dev/null || true
-  sudo mv ~/backend-layers/* "$BACKEND_DIR/" 2>/dev/null || true
-else
-  echo "  Syncing only application layer..."
-  sudo rm -rf "$BACKEND_DIR/application" 2>/dev/null || true
-  sudo mv ~/backend-layers/application "$BACKEND_DIR/" 2>/dev/null || true
-fi
-
-# 设置权限
-sudo chown -R www:www "$BACKEND_DIR/dependencies" "$BACKEND_DIR/spring-boot-loader" "$BACKEND_DIR/snapshot-dependencies" "$BACKEND_DIR/application" 2>/dev/null || true
-sudo chmod -R 755 "$BACKEND_DIR/dependencies" "$BACKEND_DIR/spring-boot-loader" "$BACKEND_DIR/snapshot-dependencies" "$BACKEND_DIR/application" 2>/dev/null || true
-
-# 创建启动 JAR（使用原始 JAR 作为启动器）
+# 移动 app.jar 到目标目录
 if [ -f ~/app.jar ]; then
   sudo mv ~/app.jar "$BACKEND_DIR/app.jar" 2>/dev/null || true
   sudo chmod 755 "$BACKEND_DIR/app.jar" 2>/dev/null || true
   sudo chown www:www "$BACKEND_DIR/app.jar" 2>/dev/null || true
 fi
 
-rm -rf ~/backend-layers
-echo "✅ Layered JAR deployed successfully"
+# 移动同步的层到目标目录（根据是否存在 dependencies 目录判断）
+if [ ! -d "$BACKEND_DIR/dependencies" ] || [ -d ~/rsync-temp/dependencies ]; then
+  echo "  Moving all layers to target directory..."
+  for layer in dependencies spring-boot-loader snapshot-dependencies application; do
+    if [ -d ~/rsync-temp/$layer ]; then
+      sudo rm -rf "$BACKEND_DIR/$layer" 2>/dev/null || true
+      sudo mv ~/rsync-temp/$layer "$BACKEND_DIR/" 2>/dev/null || true
+    fi
+  done
+else
+  echo "  Moving only application layer..."
+  if [ -d ~/rsync-temp/application ]; then
+    sudo rm -rf "$BACKEND_DIR/application" 2>/dev/null || true
+    sudo mv ~/rsync-temp/application "$BACKEND_DIR/" 2>/dev/null || true
+  fi
+fi
+
+# 设置层目录权限
+sudo chown -R www:www "$BACKEND_DIR/dependencies" "$BACKEND_DIR/spring-boot-loader" "$BACKEND_DIR/snapshot-dependencies" "$BACKEND_DIR/application" 2>/dev/null || true
+sudo chmod -R 755 "$BACKEND_DIR/dependencies" "$BACKEND_DIR/spring-boot-loader" "$BACKEND_DIR/snapshot-dependencies" "$BACKEND_DIR/application" 2>/dev/null || true
+
+# 清理临时目录
+rm -rf ~/rsync-temp
+
+echo "✅ Layered JAR deployed successfully with rsync"
 DEPLOY_EOF
           else
             # 传统 JAR 部署
