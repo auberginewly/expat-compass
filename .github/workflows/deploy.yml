@@ -1,27 +1,9 @@
-name: Deploy to Baota Panel
+name: Deploy to Server
 
 on:
   push:
-    branches:
-      - main
-      - master
+    branches: [main, master]
   workflow_dispatch:
-    inputs:
-      skip_build:
-        description: '跳过构建，只更新文件（需要手动上传构建产物）'
-        required: false
-        default: false
-        type: boolean
-      only_frontend:
-        description: '只部署前端'
-        required: false
-        default: false
-        type: boolean
-      only_backend:
-        description: '只部署后端'
-        required: false
-        default: false
-        type: boolean
 
 jobs:
   deploy:
@@ -30,507 +12,103 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 2  # 需要获取历史记录以检测变更
       
-      - name: Detect changes
-        id: changes
-        run: |
-          # 如果是手动触发且有选项，使用选项
-          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-            if [ "${{ github.event.inputs.skip_build }}" == "true" ]; then
-              echo "build_frontend=false" >> $GITHUB_OUTPUT
-              echo "build_backend=false" >> $GITHUB_OUTPUT
-              echo "skip_build=true" >> $GITHUB_OUTPUT
-            elif [ "${{ github.event.inputs.only_frontend }}" == "true" ]; then
-              echo "build_frontend=true" >> $GITHUB_OUTPUT
-              echo "build_backend=false" >> $GITHUB_OUTPUT
-            elif [ "${{ github.event.inputs.only_backend }}" == "true" ]; then
-              echo "build_frontend=false" >> $GITHUB_OUTPUT
-              echo "build_backend=true" >> $GITHUB_OUTPUT
-            else
-              # 手动触发但没有指定选项，默认都构建
-              echo "build_frontend=true" >> $GITHUB_OUTPUT
-              echo "build_backend=true" >> $GITHUB_OUTPUT
-            fi
-          else
-            # 自动触发，检测文件变更
-            if [ "${{ github.event_name }}" == "push" ] && [ -n "${{ github.event.before }}" ]; then
-              CHANGED_FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }})
-            else
-              CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD 2>/dev/null || echo "")
-            fi
-            
-            FRONTEND_CHANGED=false
-            BACKEND_CHANGED=false
-            
-            if echo "$CHANGED_FILES" | grep -qE "^frontend/|^\.github/workflows/"; then
-              FRONTEND_CHANGED=true
-            fi
-            if echo "$CHANGED_FILES" | grep -qE "^backend/|^\.github/workflows/"; then
-              BACKEND_CHANGED=true
-            fi
-            
-            # 如果没有任何变更或无法检测，默认都构建（安全起见）
-            if [ -z "$CHANGED_FILES" ] || ([ "$FRONTEND_CHANGED" = "false" ] && [ "$BACKEND_CHANGED" = "false" ]); then
-              FRONTEND_CHANGED=true
-              BACKEND_CHANGED=true
-            fi
-            
-            echo "build_frontend=$FRONTEND_CHANGED" >> $GITHUB_OUTPUT
-            echo "build_backend=$BACKEND_CHANGED" >> $GITHUB_OUTPUT
-          fi
-          
-          echo "📊 Change Detection Results:"
-          echo "   Frontend build: ${{ steps.changes.outputs.build_frontend }}"
-          echo "   Backend build: ${{ steps.changes.outputs.build_backend }}"
-          if [ "${{ steps.changes.outputs.skip_build }}" == "true" ]; then
-            echo "   ⚠️  Skip build mode: Only deploying existing artifacts"
-          fi
-
-      # 构建前端
-      - name: Install pnpm
-        if: steps.changes.outputs.build_frontend == 'true'
-        uses: pnpm/action-setup@v4
-        with:
-          version: 10
-
+      # 前端构建
       - name: Setup Node.js
-        if: steps.changes.outputs.build_frontend == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: '18'
-          cache: 'pnpm'
-          cache-dependency-path: frontend/pnpm-lock.yaml
-
-      - name: Install frontend dependencies
-        if: steps.changes.outputs.build_frontend == 'true'
+      
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      
+      - name: Build frontend
         working-directory: ./frontend
         run: |
-          # 如果 lockfile 存在，使用 frozen-lockfile；否则正常安装
-          if [ -f pnpm-lock.yaml ]; then
-            pnpm install --frozen-lockfile
-          else
-            pnpm install
-          fi
-
-      - name: Build frontend
-        if: steps.changes.outputs.build_frontend == 'true'
-        working-directory: ./frontend
-        run: pnpm build
-        # 注意：同域部署时，前端使用相对路径 /api，无需设置 VITE_API_BASE_URL
-
-      # 构建后端
+          pnpm install
+          pnpm build
+      
+      # 后端构建
       - name: Setup Java
-        if: steps.changes.outputs.build_backend == 'true'
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
-          cache: maven
-
+      
       - name: Build backend
-        if: steps.changes.outputs.build_backend == 'true'
         working-directory: ./backend
         run: ./mvnw clean package -DskipTests
-
-      # 部署到服务器
+      
+      # 部署
       - name: Setup SSH
         uses: webfactory/ssh-agent@v0.9.0
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-
-      - name: Add server to known hosts
-        run: |
-          mkdir -p ~/.ssh
-          chmod 700 ~/.ssh
-          SERVER_PORT="${{ secrets.SERVER_PORT || '22' }}"
-          SERVER_HOST="${{ secrets.SERVER_HOST }}"
-          echo "🔍 Debug: SERVER_HOST length: ${#SERVER_HOST}"
-          echo "🔍 Debug: SERVER_PORT: ${SERVER_PORT}"
-          echo "🔍 Debug: SERVER_HOST format check..."
-          if [[ ! "${SERVER_HOST}" =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
-            echo "⚠️  Warning: SERVER_HOST may not be a valid IP address format"
-            echo "⚠️  Current value (first 10 chars): ${SERVER_HOST:0:10}..."
-          else
-            echo "✅ SERVER_HOST format looks correct"
-          fi
-          ssh-keyscan -p "${SERVER_PORT}" -H "${SERVER_HOST}" >> ~/.ssh/known_hosts 2>&1 || true
-
-      - name: Create deployment directories
-        run: |
-          SERVER_HOST="${{ secrets.SERVER_HOST }}"
-          SERVER_USER="${{ secrets.SERVER_USER }}"
-          SERVER_PORT="${{ secrets.SERVER_PORT || '22' }}"
-          
-          echo "🔍 ===== 配置验证 ====="
-          if [ -z "${SERVER_HOST}" ]; then
-            echo "❌ Error: SERVER_HOST secret is not set"
-            exit 1
-          fi
-          
-          if [ -z "${SERVER_USER}" ]; then
-            echo "❌ Error: SERVER_USER secret is not set"
-            exit 1
-          fi
-          
-          echo "✅ SERVER_HOST: ${SERVER_HOST}"
-          echo "✅ SERVER_USER: ${SERVER_USER}"
-          echo "✅ SERVER_PORT: ${SERVER_PORT}"
-          
-          # 严格验证 IP 格式
-          echo ""
-          echo "🔍 验证 SERVER_HOST 格式..."
-          if [[ "${SERVER_HOST}" =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
-            # 验证每个数字段
-            IFS='.' read -ra ADDR <<< "${SERVER_HOST}"
-            VALID=true
-            for i in "${ADDR[@]}"; do
-              if [[ $i -lt 0 ]] || [[ $i -gt 255 ]]; then
-                echo "❌ 错误：数字段 $i 不在有效范围内 (0-255)"
-                VALID=false
-              fi
-            done
-            if [ "$VALID" = true ]; then
-              echo "✅ SERVER_HOST 格式正确: ${SERVER_HOST}"
-            else
-              echo "❌ SERVER_HOST 格式错误"
-              exit 1
-            fi
-          else
-            echo "❌ 错误：SERVER_HOST 不是有效的 IPv4 格式"
-            echo "   当前值: ${SERVER_HOST}"
-            echo "   正确格式应该是: xxx.xxx.xxx.xxx (例如: 43.143.124.38)"
-            echo "   请检查 GitHub Secrets 中的 SERVER_HOST 值"
-            exit 1
-          fi
-          
-          echo ""
-          echo "🔍 正在连接到 ${SERVER_USER}@${SERVER_HOST}:${SERVER_PORT}"
-          ssh -p "${SERVER_PORT}" -T -q -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o ConnectTimeout=10 -o LogLevel=ERROR "${SERVER_USER}@${SERVER_HOST}" << 'EOF'
-# 使用 sudo 创建目录（ubuntu 用户需要 sudo 权限）
-sudo mkdir -p /www/wwwroot/expat-compass/{frontend,backend/uploads,backend/logs,backend/tmp} || mkdir -p /www/wwwroot/expat-compass/{frontend,backend/uploads,backend/logs,backend/tmp}
-# 设置权限
-sudo chown -R www:www /www/wwwroot/expat-compass 2>/dev/null || chown -R www:www /www/wwwroot/expat-compass 2>/dev/null || true
-# 确保临时目录有写权限
-sudo chmod 777 /www/wwwroot/expat-compass/backend/tmp 2>/dev/null || chmod 777 /www/wwwroot/expat-compass/backend/tmp 2>/dev/null || true
-EOF
-
+      
       - name: Deploy frontend
-        if: steps.changes.outputs.build_frontend == 'true'
         run: |
-          SERVER_PORT="${{ secrets.SERVER_PORT || '22' }}"
-          SERVER_USER="${{ secrets.SERVER_USER }}"
-          SERVER_HOST="${{ secrets.SERVER_HOST }}"
-          # 分离参数：ssh 用 -p，scp 用 -P，且 scp 不加 -T
-          SSH_OPTS="-p ${SERVER_PORT} -T -q -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o ConnectTimeout=10 -o LogLevel=ERROR"
+          SERVER="${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}"
+          PORT="${{ secrets.SERVER_PORT || '22' }}"
           
-          # 检查前端构建产物是否存在
-          if [ ! -d "frontend/dist" ] || [ -z "$(ls -A frontend/dist 2>/dev/null)" ]; then
-            echo "⚠️  Warning: frontend/dist is empty, skipping"
-            exit 0
-          fi
-          
-          echo "📤 Uploading files via Tar Pipe..."
           cd frontend/dist
-          # 确保远程目录存在再解压
-          tar czf - . | ssh ${SSH_OPTS} "${SERVER_USER}@${SERVER_HOST}" "mkdir -p ~/expat-compass-frontend && cd ~/expat-compass-frontend && tar xzf -"
-          cd ../..
+          tar czf - . | ssh -p "$PORT" -o StrictHostKeyChecking=no "$SERVER" \
+            "mkdir -p ~/frontend-tmp && cd ~/frontend-tmp && tar xzf -"
           
-          echo "🚀 Moving files to target directory..."
-          ssh ${SSH_OPTS} "${SERVER_USER}@${SERVER_HOST}" << 'DEPLOY_EOF'
+          ssh -p "$PORT" -o StrictHostKeyChecking=no "$SERVER" << 'EOF'
+sudo mkdir -p /www/wwwroot/expat-compass/frontend
 sudo rm -rf /www/wwwroot/expat-compass/frontend/*
-sudo mv ~/expat-compass-frontend/* /www/wwwroot/expat-compass/frontend/
+sudo mv ~/frontend-tmp/* /www/wwwroot/expat-compass/frontend/
 sudo chown -R www:www /www/wwwroot/expat-compass/frontend
-rm -rf ~/expat-compass-frontend
-DEPLOY_EOF
-          echo "✅ Frontend deployed successfully"
-
+rm -rf ~/frontend-tmp
+EOF
+      
       - name: Deploy backend
-        if: steps.changes.outputs.build_backend == 'true'
         run: |
-          SERVER_PORT="${{ secrets.SERVER_PORT || '22' }}"
-          SERVER_USER="${{ secrets.SERVER_USER }}"
-          SERVER_HOST="${{ secrets.SERVER_HOST }}"
-          SSH_OPTS="-p ${SERVER_PORT} -T -q -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o ConnectTimeout=10 -o LogLevel=ERROR"
-          SCP_OPTS="-P ${SERVER_PORT} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o ConnectTimeout=10"
+          SERVER="${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}"
+          PORT="${{ secrets.SERVER_PORT || '22' }}"
           
-          # 检查 JAR 文件是否存在
-          JAR_FILE=$(find backend/target -name "*.jar" ! -name "*-sources.jar" ! -name "*-javadoc.jar" | head -n 1)
-          if [ -z "$JAR_FILE" ]; then
-            echo "❌ Error: JAR file not found in backend/target/"
-            ls -la backend/target/ || true
-            exit 1
-          fi
+          JAR_FILE=$(find backend/target -name "*.jar" ! -name "*-sources.jar" | head -n 1)
+          scp -P "$PORT" -o StrictHostKeyChecking=no "$JAR_FILE" "$SERVER:~/app.jar"
           
-          # 转换为绝对路径，避免路径问题
-          JAR_FILE=$(cd "$(dirname "$JAR_FILE")" && pwd)/$(basename "$JAR_FILE")
-          echo "✅ Found JAR file: $JAR_FILE"
-          
-          # 检查是否使用分层 JAR
-          LAYERED_DEPLOY=false
-          if unzip -l "$JAR_FILE" 2>/dev/null | grep -q "BOOT-INF/layers.idx"; then
-            echo "📦 Detected layered JAR, extracting layers..."
-            
-            # 提取分层 JAR - 使用绝对路径
-            LAYERS_DIR="${{ github.workspace }}/backend/target/layers"
-            mkdir -p "$LAYERS_DIR"
-            rm -rf "$LAYERS_DIR"/*
-            
-            # 进入 JAR 文件所在目录执行提取（确保路径正确）
-            JAR_DIR=$(dirname "$JAR_FILE")
-            JAR_NAME=$(basename "$JAR_FILE")
-            cd "$JAR_DIR"
-            
-            # 使用 Spring Boot 的 jarmode 提取层
-            if java -Djarmode=layertools -jar "$JAR_NAME" extract --destination "$LAYERS_DIR" 2>&1; then
-              if [ -d "$LAYERS_DIR/application" ]; then
-                LAYERED_DEPLOY=true
-                echo "✅ Layers extracted successfully"
-              else
-                echo "⚠️  Layers directory structure incorrect, using full JAR"
-              fi
-            else
-              echo "⚠️  jarmode extract failed, falling back to full JAR upload"
-            fi
-            
-            # 返回工作目录
-            cd "${{ github.workspace }}"
-          else
-            echo "📦 Using traditional JAR deployment (no layers.idx found)"
-          fi
-          
-          if [ "$LAYERED_DEPLOY" = true ]; then
-            echo "📤 Uploading layered JAR using rsync (optimized)..."
-            
-            # 检查是否需要上传依赖层（pom.xml 是否变化）
-            NEED_DEPENDENCIES=false
-            if [ "${{ github.event_name }}" == "push" ] && [ -n "${{ github.event.before }}" ]; then
-              CHANGED_FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }})
-              if echo "$CHANGED_FILES" | grep -qE "^backend/pom.xml"; then
-                NEED_DEPENDENCIES=true
-                echo "📦 pom.xml changed, will upload all layers"
-              fi
-            else
-              # 首次部署或无法检测，上传所有层
-              NEED_DEPENDENCIES=true
-            fi
-            
-            # 准备远程目录
-            ssh ${SSH_OPTS} "${SERVER_USER}@${SERVER_HOST}" "BACKEND_DIR=\"/www/wwwroot/expat-compass/backend\" && sudo mkdir -p \"\$BACKEND_DIR\" || true"
-            
-            # 上传 app.jar（systemd 需要它来启动）
-            echo "  Uploading app.jar (launcher)..."
-            scp ${SCP_OPTS} -C "$JAR_FILE" "${SERVER_USER}@${SERVER_HOST}:~/app.jar"
-            
-            # 使用 rsync 同步层（支持增量传输和断点续传）
-            # 先同步到用户目录，然后通过 SSH 移动到目标目录（避免权限问题）
-            ssh ${SSH_OPTS} "${SERVER_USER}@${SERVER_HOST}" "mkdir -p ~/rsync-temp && rm -rf ~/rsync-temp/*"
-            
-            if [ "$NEED_DEPENDENCIES" = true ]; then
-              echo "  Syncing all layers with rsync..."
-              for layer in dependencies spring-boot-loader snapshot-dependencies application; do
-                if [ -d "$LAYERS_DIR/$layer" ]; then
-                  echo "    Syncing $layer layer..."
-                  rsync -az --delete --progress \
-                    -e "ssh -p ${SERVER_PORT} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o ConnectTimeout=10" \
-                    "$LAYERS_DIR/$layer/" \
-                    "${SERVER_USER}@${SERVER_HOST}:~/rsync-temp/$layer/"
-                fi
-              done
-            else
-              echo "  Syncing only application layer (dependencies unchanged)..."
-              if [ -d "$LAYERS_DIR/application" ]; then
-                rsync -az --delete --progress \
-                  -e "ssh -p ${SERVER_PORT} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o ConnectTimeout=10" \
-                  "$LAYERS_DIR/application/" \
-                  "${SERVER_USER}@${SERVER_HOST}:~/rsync-temp/application/"
-              fi
-            fi
-            
-            # 部署到目标目录并设置权限
-            ssh ${SSH_OPTS} "${SERVER_USER}@${SERVER_HOST}" << 'DEPLOY_EOF'
+          ssh -p "$PORT" -o StrictHostKeyChecking=no "$SERVER" << 'EOF'
 BACKEND_DIR="/www/wwwroot/expat-compass/backend"
-
-# 备份旧版本（如果存在）
-if [ -f "$BACKEND_DIR/app.jar" ]; then
-  sudo cp "$BACKEND_DIR/app.jar" "$BACKEND_DIR/app.jar.backup.$(date +%Y%m%d%H%M%S)" 2>/dev/null || true
-fi
-
-# 移动 app.jar 到目标目录
-if [ -f ~/app.jar ]; then
-  sudo mv ~/app.jar "$BACKEND_DIR/app.jar" 2>/dev/null || true
-  sudo chmod 755 "$BACKEND_DIR/app.jar" 2>/dev/null || true
-  sudo chown www:www "$BACKEND_DIR/app.jar" 2>/dev/null || true
-fi
-
-# 移动同步的层到目标目录（根据是否存在 dependencies 目录判断）
-if [ ! -d "$BACKEND_DIR/dependencies" ] || [ -d ~/rsync-temp/dependencies ]; then
-  echo "  Moving all layers to target directory..."
-  for layer in dependencies spring-boot-loader snapshot-dependencies application; do
-    if [ -d ~/rsync-temp/$layer ]; then
-      sudo rm -rf "$BACKEND_DIR/$layer" 2>/dev/null || true
-      sudo mv ~/rsync-temp/$layer "$BACKEND_DIR/" 2>/dev/null || true
-    fi
-  done
-else
-  echo "  Moving only application layer..."
-  if [ -d ~/rsync-temp/application ]; then
-    sudo rm -rf "$BACKEND_DIR/application" 2>/dev/null || true
-    sudo mv ~/rsync-temp/application "$BACKEND_DIR/" 2>/dev/null || true
-  fi
-fi
-
-# 设置层目录权限
-sudo chown -R www:www "$BACKEND_DIR/dependencies" "$BACKEND_DIR/spring-boot-loader" "$BACKEND_DIR/snapshot-dependencies" "$BACKEND_DIR/application" 2>/dev/null || true
-sudo chmod -R 755 "$BACKEND_DIR/dependencies" "$BACKEND_DIR/spring-boot-loader" "$BACKEND_DIR/snapshot-dependencies" "$BACKEND_DIR/application" 2>/dev/null || true
-
-# 清理临时目录
-rm -rf ~/rsync-temp
-
-echo "✅ Layered JAR deployed successfully with rsync"
-DEPLOY_EOF
-          else
-            # 传统 JAR 部署
-            echo "📤 Uploading full JAR..."
-            ssh ${SSH_OPTS} "${SERVER_USER}@${SERVER_HOST}" << 'PREP_EOF'
-if [ -f /www/wwwroot/expat-compass/backend/app.jar ]; then
-  sudo cp /www/wwwroot/expat-compass/backend/app.jar /www/wwwroot/expat-compass/backend/app.jar.backup.$(date +%Y%m%d%H%M%S) 2>/dev/null || true
-fi
-rm -f ~/app.jar
-PREP_EOF
-            
-            scp ${SCP_OPTS} -C "$JAR_FILE" "${SERVER_USER}@${SERVER_HOST}:~/app.jar"
-            
-            ssh ${SSH_OPTS} "${SERVER_USER}@${SERVER_HOST}" << 'DEPLOY_EOF'
-if [ ! -f ~/app.jar ]; then
-  echo "❌ Error: app.jar not found"
-  exit 1
-fi
-sudo mv ~/app.jar /www/wwwroot/expat-compass/backend/app.jar 2>/dev/null || mv ~/app.jar /www/wwwroot/expat-compass/backend/app.jar
-sudo chmod 755 /www/wwwroot/expat-compass/backend/app.jar 2>/dev/null || chmod 755 /www/wwwroot/expat-compass/backend/app.jar 2>/dev/null || true
-sudo chown www:www /www/wwwroot/expat-compass/backend/app.jar 2>/dev/null || chown www:www /www/wwwroot/expat-compass/backend/app.jar 2>/dev/null || true
-echo "✅ JAR file deployed successfully"
-DEPLOY_EOF
-          fi
-
-      - name: Restart backend service
-        if: steps.changes.outputs.build_backend == 'true'
+sudo mkdir -p "$BACKEND_DIR/logs" "$BACKEND_DIR/tmp"
+sudo mv ~/app.jar "$BACKEND_DIR/app.jar"
+sudo chown -R www:www "$BACKEND_DIR"
+sudo chmod 755 "$BACKEND_DIR/app.jar"
+EOF
+      
+      - name: Restart backend
         run: |
-          SERVER_PORT="${{ secrets.SERVER_PORT || '22' }}"
-          SERVER_USER="${{ secrets.SERVER_USER }}"
-          SERVER_HOST="${{ secrets.SERVER_HOST }}"
-          SSH_OPTS="-p ${SERVER_PORT} -T -q -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o ConnectTimeout=10 -o LogLevel=ERROR"
-          SCP_OPTS="-P ${SERVER_PORT} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o ConnectTimeout=10"
+          SERVER="${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}"
+          PORT="${{ secrets.SERVER_PORT || '22' }}"
           
-          # 上传 systemd 服务文件（如果需要）
-          SERVICE_NAME="expat-compass-backend"
-          SERVICE_FILE="/etc/systemd/system/${SERVICE_NAME}.service"
-          
-          # 检查服务是否已安装
-          SERVICE_EXISTS=$(ssh ${SSH_OPTS} "${SERVER_USER}@${SERVER_HOST}" "test -f $SERVICE_FILE && echo 'yes' || echo 'no'")
-          
-          if [ "$SERVICE_EXISTS" != "yes" ]; then
-            echo "📦 Installing systemd service (first time)..."
-            
-            # 上传服务文件
-            scp ${SCP_OPTS} backend/expat-compass-backend.service "${SERVER_USER}@${SERVER_HOST}:~/expat-compass-backend.service"
-            
-            # 安装服务
-            ssh ${SSH_OPTS} "${SERVER_USER}@${SERVER_HOST}" << 'INSTALL_EOF'
-BACKEND_DIR="/www/wwwroot/expat-compass/backend"
-
-# 确保目录存在
-sudo mkdir -p "$BACKEND_DIR/logs" "$BACKEND_DIR/tmp" || true
-sudo chown -R www:www "$BACKEND_DIR" || true
-sudo chmod 755 "$BACKEND_DIR/logs" "$BACKEND_DIR/tmp" || true
-
-# 移动服务文件到系统目录
-sudo mv ~/expat-compass-backend.service /etc/systemd/system/expat-compass-backend.service
-sudo chmod 644 /etc/systemd/system/expat-compass-backend.service
-
-# 重新加载 systemd 并启用服务
-sudo systemctl daemon-reload
-sudo systemctl enable expat-compass-backend
-echo "✅ Systemd service installed and enabled"
-INSTALL_EOF
-          else
-            echo "✅ Systemd service already exists"
-          fi
-          
-          # 重启服务
-          ssh ${SSH_OPTS} "${SERVER_USER}@${SERVER_HOST}" << 'RESTART_EOF'
-SERVICE_NAME="expat-compass-backend"
-BACKEND_DIR="/www/wwwroot/expat-compass/backend"
-
-# 停止旧进程（如果存在且不是 systemd 管理的）
-if pgrep -f "java.*app.jar" > /dev/null && ! sudo systemctl is-active --quiet "$SERVICE_NAME" 2>/dev/null; then
-  echo "🛑 Stopping old process..."
-  sudo pkill -f "java.*app.jar" || true
-  sleep 2
-fi
-
-# 重启 systemd 服务
-echo "🔄 Restarting systemd service..."
-sudo systemctl restart "$SERVICE_NAME"
+          ssh -p "$PORT" -o StrictHostKeyChecking=no "$SERVER" << 'EOF'
+sudo pkill -f "java.*app.jar" || true
 sleep 2
-
-# 检查服务状态
-if sudo systemctl is-active --quiet "$SERVICE_NAME"; then
-  echo "✅ Service is running"
-  sudo systemctl status "$SERVICE_NAME" --no-pager -l || true
-else
-  echo "❌ Service failed to start"
-  sudo systemctl status "$SERVICE_NAME" --no-pager -l || true
-  echo ""
-  echo "Recent logs:"
-  sudo journalctl -u "$SERVICE_NAME" -n 20 --no-pager || tail -30 "$BACKEND_DIR/logs/app.log" 2>/dev/null || echo "No logs available"
-  exit 1
-fi
-RESTART_EOF
-
+cd /www/wwwroot/expat-compass/backend
+sudo -u www nohup java -Xms512m -Xmx1024m \
+  -Dspring.profiles.active=prod \
+  -Djava.io.tmpdir=/www/wwwroot/expat-compass/backend/tmp \
+  -jar app.jar > logs/app.log 2>&1 &
+EOF
+      
       - name: Health check
         run: |
-          SERVER_PORT="${{ secrets.SERVER_PORT || '22' }}"
-          ssh -p "${SERVER_PORT}" -T -q -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o ConnectTimeout=10 -o LogLevel=ERROR ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
-echo "Starting health check..."
-
-# 快速检查应用进程
-if ! pgrep -f "java.*app.jar" > /dev/null; then
-  echo "❌ Application process is not running"
-  tail -30 /www/wwwroot/expat-compass/backend/logs/app.log 2>/dev/null || echo "日志文件不存在"
-  exit 1
-fi
-echo "✅ Application process is running"
-
-# 健康检查（增加到 20 次，每次 3 秒，总计 60 秒）
-echo "Waiting for service to be ready (max 60 seconds)..."
-for i in {1..20}; do
+          SERVER="${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}"
+          PORT="${{ secrets.SERVER_PORT || '22' }}"
+          
+          ssh -p "$PORT" -o StrictHostKeyChecking=no "$SERVER" << 'EOF'
+for i in {1..12}; do
   if curl -f -s http://localhost:8080/api/health > /dev/null 2>&1; then
-    echo "✅ Health check passed! (${i} attempts)"
+    echo "✅ Health check passed"
     exit 0
   fi
-  if [ $((i % 5)) -eq 0 ]; then
-    echo "   [$i/20] Waiting for service..."
-  fi
-  if [ "$i" -lt 20 ]; then
-    sleep 3
-  fi
+  sleep 5
 done
-
-# 失败时显示关键信息
-echo "❌ Health check failed after 60 seconds"
-echo "应用状态:"
-ps aux | grep "java.*app.jar" | grep -v grep | head -1 || echo "  进程未运行"
-ss -tln 2>/dev/null | grep 8080 || echo "  端口 8080 未监听"
-tail -30 /www/wwwroot/expat-compass/backend/logs/app.log 2>/dev/null || echo "日志文件不存在"
+echo "❌ Health check failed"
 exit 1
 EOF
-
-      - name: Deployment success
-        if: success()
-        run: |
-          echo "✅ Deployment completed successfully!"
-          echo "Frontend: http://${{ secrets.SERVER_HOST }}"
-          echo "Backend API: http://${{ secrets.SERVER_HOST }}/api"
 
