@@ -240,7 +240,9 @@ jobs:
           
           echo "📤 Uploading files..."
           # 上传文件（使用压缩传输可加快速度）
-          scp ${SSH_OPTS} -C -r frontend/dist/* "${SERVER_USER}@${SERVER_HOST}:~/expat-compass-frontend/"
+          # 使用 find + xargs 来避免通配符展开问题，或者直接复制目录内容
+          # 方法：进入 dist 目录，使用 . 来复制所有内容
+          (cd frontend/dist && scp ${SSH_OPTS} -C -r . "${SERVER_USER}@${SERVER_HOST}:~/expat-compass-frontend/")
           
           echo "🚀 Moving files to target directory..."
           # 移动文件并设置权限（一次性完成）
