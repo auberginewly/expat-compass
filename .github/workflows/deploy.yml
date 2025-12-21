@@ -222,42 +222,26 @@ jobs:
           SERVER_PORT="${{ secrets.SERVER_PORT || '22' }}"
           SERVER_USER="${{ secrets.SERVER_USER }}"
           SERVER_HOST="${{ secrets.SERVER_HOST }}"
+          # 分离参数：ssh 用 -p，scp 用 -P，且 scp 不加 -T
           SSH_OPTS="-p ${SERVER_PORT} -T -q -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o ConnectTimeout=10 -o LogLevel=ERROR"
           
           # 检查前端构建产物是否存在
           if [ ! -d "frontend/dist" ] || [ -z "$(ls -A frontend/dist 2>/dev/null)" ]; then
-            echo "⚠️  Warning: frontend/dist is empty or does not exist, skipping frontend deployment"
+            echo "⚠️  Warning: frontend/dist is empty, skipping"
             exit 0
           fi
           
-          echo "📦 Preparing deployment..."
-          # 一次性执行所有准备操作（减少 SSH 连接次数）
-          ssh ${SSH_OPTS} "${SERVER_USER}@${SERVER_HOST}" << 'PREP_EOF'
-            # 清空旧文件并创建临时目录
-            sudo rm -rf /www/wwwroot/expat-compass/frontend/* || rm -rf /www/wwwroot/expat-compass/frontend/* || true
-            mkdir -p ~/expat-compass-frontend && rm -rf ~/expat-compass-frontend/*
-          PREP_EOF
-          
-          echo "📤 Uploading files..."
-          # 上传文件（使用压缩传输可加快速度）
-          # 验证目录存在且有文件
-          if [ ! -d "frontend/dist" ]; then
-            echo "❌ Error: frontend/dist directory does not exist"
-            exit 1
-          fi
-          
-          # 使用 rsync 风格的 scp：直接复制目录，目标路径以 / 结尾
-          # 但 scp 不支持这种语法，所以使用 tar 管道传输（最可靠的方法）
-          echo "Packaging and uploading files..."
+          echo "📤 Uploading files via Tar Pipe..."
           cd frontend/dist
-          tar czf - . | ssh ${SSH_OPTS} "${SERVER_USER}@${SERVER_HOST}" "cd ~/expat-compass-frontend && tar xzf -"
+          # 确保远程目录存在再解压
+          tar czf - . | ssh ${SSH_OPTS} "${SERVER_USER}@${SERVER_HOST}" "mkdir -p ~/expat-compass-frontend && cd ~/expat-compass-frontend && tar xzf -"
           cd ../..
           
           echo "🚀 Moving files to target directory..."
-          # 移动文件并设置权限（一次性完成）
           ssh ${SSH_OPTS} "${SERVER_USER}@${SERVER_HOST}" << 'DEPLOY_EOF'
-            sudo mv ~/expat-compass-frontend/* /www/wwwroot/expat-compass/frontend/ 2>/dev/null || mv ~/expat-compass-frontend/* /www/wwwroot/expat-compass/frontend/
-            sudo chown -R www:www /www/wwwroot/expat-compass/frontend 2>/dev/null || chown -R www:www /www/wwwroot/expat-compass/frontend 2>/dev/null || true
+            sudo rm -rf /www/wwwroot/expat-compass/frontend/*
+            sudo mv ~/expat-compass-frontend/* /www/wwwroot/expat-compass/frontend/
+            sudo chown -R www:www /www/wwwroot/expat-compass/frontend
             rm -rf ~/expat-compass-frontend
           DEPLOY_EOF
           echo "✅ Frontend deployed successfully"
@@ -268,7 +252,9 @@ jobs:
           SERVER_PORT="${{ secrets.SERVER_PORT || '22' }}"
           SERVER_USER="${{ secrets.SERVER_USER }}"
           SERVER_HOST="${{ secrets.SERVER_HOST }}"
+          # 关键修改：ssh 和 scp 参数分开定义
           SSH_OPTS="-p ${SERVER_PORT} -T -q -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o ConnectTimeout=10 -o LogLevel=ERROR"
+          SCP_OPTS="-P ${SERVER_PORT} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o ConnectTimeout=10"
           
           # 检查 JAR 文件是否存在
           JAR_FILE=$(find backend/target -name "*.jar" ! -name "*-sources.jar" ! -name "*-javadoc.jar" | head -n 1)
@@ -280,8 +266,7 @@ jobs:
           fi
           echo "✅ Found JAR file: $JAR_FILE"
           
-          echo "📦 Preparing deployment..."
-          # 备份旧版本并准备临时目录
+          echo "📦 Preparing and Uploading..."
           ssh ${SSH_OPTS} "${SERVER_USER}@${SERVER_HOST}" << 'PREP_EOF'
             if [ -f /www/wwwroot/expat-compass/backend/app.jar ]; then
               sudo cp /www/wwwroot/expat-compass/backend/app.jar /www/wwwroot/expat-compass/backend/app.jar.backup.$(date +%Y%m%d%H%M%S) 2>/dev/null || \
@@ -290,12 +275,10 @@ jobs:
             rm -f ~/app.jar
           PREP_EOF
           
-          echo "📤 Uploading JAR file..."
-          # 上传新 JAR（使用压缩传输）
-          scp ${SSH_OPTS} -C "$JAR_FILE" "${SERVER_USER}@${SERVER_HOST}:~/app.jar"
+          # 使用大写的 -P 参数，且不使用 SSH_OPTS（因为包含 -T 等 scp 不支持的参数）
+          scp ${SCP_OPTS} -C "$JAR_FILE" "${SERVER_USER}@${SERVER_HOST}:~/app.jar"
           
-          echo "🚀 Moving JAR to target directory..."
-          # 移动文件并设置权限（一次性完成）
+          echo "🚀 Moving JAR to target..."
           ssh ${SSH_OPTS} "${SERVER_USER}@${SERVER_HOST}" << 'DEPLOY_EOF'
             if [ ! -f ~/app.jar ]; then
               echo "❌ Error: app.jar not found in home directory"
@@ -372,26 +355,31 @@ jobs:
               fi
               echo "✅ Found app.jar: $(ls -lh app.jar)"
               
-              # 确保 logs 目录存在并有写权限
-              sudo mkdir -p logs || mkdir -p logs
-              sudo chmod 777 logs || chmod 777 logs  # 临时放宽权限以确保可以写入
-              # 删除旧的日志文件（如果存在）
-              sudo rm -f logs/app.log || rm -f logs/app.log
-              # 创建日志文件并设置权限（使用 sudo -u www 创建，确保所有者正确）
-              sudo -u www touch logs/app.log 2>/dev/null || touch logs/app.log
-              # 设置权限，确保 www 用户可以写入
-              sudo chmod 666 logs/app.log 2>/dev/null || chmod 666 logs/app.log 2>/dev/null || true
-              sudo chown www:www logs/app.log 2>/dev/null || chown www:www logs/app.log 2>/dev/null || true
-              # 验证文件是否创建成功
-              if [ ! -f logs/app.log ]; then
-                echo "⚠️  Warning: Failed to create log file, will try to create during startup"
-              else
-                echo "✅ Log file created: $(ls -lh logs/app.log)"
-              fi
-              
               # 使用绝对路径
               LOG_FILE="/www/wwwroot/expat-compass/backend/logs/app.log"
+              LOG_DIR="/www/wwwroot/expat-compass/backend/logs"
               JAR_FILE="/www/wwwroot/expat-compass/backend/app.jar"
+              APP_TMP_DIR="/www/wwwroot/expat-compass/backend/tmp"
+              
+              # 确保日志目录存在并有完整权限
+              sudo mkdir -p "$LOG_DIR" || mkdir -p "$LOG_DIR"
+              sudo chmod 755 "$LOG_DIR" || chmod 755 "$LOG_DIR"
+              sudo chown www:www "$LOG_DIR" 2>/dev/null || chown www:www "$LOG_DIR" 2>/dev/null || true
+              
+              # 删除旧的日志文件（如果存在）
+              sudo rm -f "$LOG_FILE" || rm -f "$LOG_FILE"
+              
+              # 创建日志文件并设置权限（使用 sudo -u www 创建，确保所有者正确）
+              sudo -u www touch "$LOG_FILE" 2>/dev/null || touch "$LOG_FILE"
+              sudo chmod 644 "$LOG_FILE" 2>/dev/null || chmod 644 "$LOG_FILE" 2>/dev/null || true
+              sudo chown www:www "$LOG_FILE" 2>/dev/null || chown www:www "$LOG_FILE" 2>/dev/null || true
+              
+              # 验证文件是否创建成功
+              if [ ! -f "$LOG_FILE" ]; then
+                echo "⚠️  Warning: Failed to create log file, will try to create during startup"
+              else
+                echo "✅ Log file created: $(ls -lh $LOG_FILE)"
+              fi
               
               # 检查端口是否被占用（使用不需要 root 权限的方法）
               if ss -tln 2>/dev/null | grep -q ":8080" || netstat -tln 2>/dev/null | grep -q ":8080"; then
@@ -399,17 +387,9 @@ jobs:
                 ss -tln 2>/dev/null | grep 8080 || netstat -tln 2>/dev/null | grep 8080 || true
               fi
               
-              # 确保日志文件存在且可写
-              if [ ! -f "$LOG_FILE" ]; then
-                sudo -u www touch "$LOG_FILE" 2>/dev/null || touch "$LOG_FILE"
-                sudo chmod 666 "$LOG_FILE" 2>/dev/null || chmod 666 "$LOG_FILE" 2>/dev/null || true
-                sudo chown www:www "$LOG_FILE" 2>/dev/null || chown www:www "$LOG_FILE" 2>/dev/null || true
-              fi
-              
               # 创建应用专用的临时目录（避免 /tmp 权限问题）
-              APP_TMP_DIR="/www/wwwroot/expat-compass/backend/tmp"
               sudo mkdir -p "$APP_TMP_DIR" || mkdir -p "$APP_TMP_DIR"
-              sudo chmod 777 "$APP_TMP_DIR" || chmod 777 "$APP_TMP_DIR"
+              sudo chmod 755 "$APP_TMP_DIR" || chmod 755 "$APP_TMP_DIR"
               sudo chown www:www "$APP_TMP_DIR" 2>/dev/null || chown www:www "$APP_TMP_DIR" 2>/dev/null || true
               echo "✅ Created temp directory: $APP_TMP_DIR"
               
@@ -424,9 +404,11 @@ jobs:
               sleep 1
               if ! pgrep -f "java.*app.jar" > /dev/null; then
                 echo "Process not found, retrying without sudo..."
-                sudo chmod 666 "$LOG_FILE" 2>/dev/null || chmod 666 "$LOG_FILE" 2>/dev/null || true
-                mkdir -p "$APP_TMP_DIR" || true
-                chmod 777 "$APP_TMP_DIR" || true
+                # 确保目录和文件权限正确
+                mkdir -p "$LOG_DIR" "$APP_TMP_DIR" || true
+                chmod 755 "$LOG_DIR" "$APP_TMP_DIR" || true
+                touch "$LOG_FILE" || true
+                chmod 644 "$LOG_FILE" || true
                 cd /www/wwwroot/expat-compass/backend
                 nohup "$JAVA_CMD" -jar -Xms512m -Xmx1024m -Dspring.profiles.active=prod -Djava.io.tmpdir="$APP_TMP_DIR" "$JAR_FILE" > "$LOG_FILE" 2>&1 &
                 sleep 1
@@ -487,29 +469,27 @@ jobs:
             fi
             echo "✅ Application process is running"
             
-            # 健康检查（8次重试，每次3秒，总共24秒）
-            echo "Waiting for service to be ready (max 24 seconds)..."
-            for i in {1..8}; do
-              if ss -tln 2>/dev/null | grep -q ":8080" || netstat -tln 2>/dev/null | grep -q ":8080"; then
-                if curl -f -s http://localhost:8080/api/health > /dev/null 2>&1; then
-                  echo "✅ Health check passed! (${i} attempts)"
-                  exit 0
-                fi
+            # 健康检查（增加到 20 次，每次 3 秒，总计 60 秒）
+            echo "Waiting for service to be ready (max 60 seconds)..."
+            for i in {1..20}; do
+              if curl -f -s http://localhost:8080/api/health > /dev/null 2>&1; then
+                echo "✅ Health check passed! (${i} attempts)"
+                exit 0
               fi
-              if [ $((i % 2)) -eq 0 ]; then
-                echo "   [$i/8] 等待应用就绪..."
+              if [ $((i % 5)) -eq 0 ]; then
+                echo "   [$i/20] Waiting for service..."
               fi
-              if [ "$i" -lt 8 ]; then
+              if [ "$i" -lt 20 ]; then
                 sleep 3
               fi
             done
             
             # 失败时显示关键信息
-            echo "❌ Health check failed after 24 seconds"
+            echo "❌ Health check failed after 60 seconds"
             echo "应用状态:"
             ps aux | grep "java.*app.jar" | grep -v grep | head -1 || echo "  进程未运行"
             ss -tln 2>/dev/null | grep 8080 || echo "  端口 8080 未监听"
-            tail -20 /www/wwwroot/expat-compass/backend/logs/app.log 2>/dev/null || echo "日志文件不存在"
+            tail -30 /www/wwwroot/expat-compass/backend/logs/app.log 2>/dev/null || echo "日志文件不存在"
             exit 1
           EOF
 
