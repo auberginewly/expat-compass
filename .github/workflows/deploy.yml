@@ -36,10 +36,19 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
+          cache: 'maven'
+      
+      - name: Cache Maven dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-m2-
       
       - name: Build backend
         working-directory: ./backend
-        run: ./mvnw clean package -DskipTests
+        run: ./mvnw package -DskipTests
       
       # 部署
       - name: Setup SSH
@@ -67,16 +76,28 @@ jobs:
         run: |
           SERVER="${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}"
           PORT="${{ secrets.SERVER_PORT || '22' }}"
+          SSH_OPTS="-p $PORT -o StrictHostKeyChecking=no -o ConnectTimeout=10 -o ServerAliveInterval=30 -o ServerAliveCountMax=3"
+          SCP_OPTS="-P $PORT -o StrictHostKeyChecking=no -o ConnectTimeout=10 -C"
           
           JAR_FILE=$(find backend/target -name "*.jar" ! -name "*-sources.jar" | head -n 1)
-          scp -P "$PORT" -o StrictHostKeyChecking=no "$JAR_FILE" "$SERVER:~/app.jar"
+          if [ -z "$JAR_FILE" ]; then
+            echo "❌ JAR file not found!"
+            exit 1
+          fi
           
-          ssh -p "$PORT" -o StrictHostKeyChecking=no "$SERVER" \
-            "BACKEND_DIR=/www/wwwroot/expat-compass/backend && \
-             sudo mkdir -p \$BACKEND_DIR/logs \$BACKEND_DIR/tmp && \
-             sudo mv ~/app.jar \$BACKEND_DIR/app.jar && \
-             sudo chown -R www:www \$BACKEND_DIR && \
-             sudo chmod 755 \$BACKEND_DIR/app.jar"
+          JAR_SIZE=$(du -h "$JAR_FILE" | cut -f1)
+          echo "📦 Uploading JAR file ($JAR_SIZE) with compression..."
+          
+          # 使用压缩传输，然后合并所有服务器端操作为一个 SSH 命令
+          scp $SCP_OPTS "$JAR_FILE" "$SERVER:~/app.jar.tmp" && \
+          ssh $SSH_OPTS "$SERVER" bash -c "
+            BACKEND_DIR=/www/wwwroot/expat-compass/backend
+            sudo mkdir -p \$BACKEND_DIR/logs \$BACKEND_DIR/tmp
+            sudo mv ~/app.jar.tmp \$BACKEND_DIR/app.jar
+            sudo chown -R www:www \$BACKEND_DIR
+            sudo chmod 755 \$BACKEND_DIR/app.jar
+            echo '✅ Backend deployed successfully'
+          "
       
       - name: Restart backend
         run: |
@@ -98,14 +119,18 @@ jobs:
           PORT="${{ secrets.SERVER_PORT || '22' }}"
           
           ssh -p "$PORT" -o StrictHostKeyChecking=no "$SERVER" bash -c "
-            for i in {1..12}; do
+            echo '⏳ Waiting for application to start...'
+            for i in {1..8}; do
               if curl -f -s http://localhost:8080/api/health > /dev/null 2>&1; then
-                echo '✅ Health check passed'
+                echo \"✅ Health check passed (attempt \$i/8)\"
                 exit 0
               fi
-              sleep 5
+              echo \"   [\$i/8] Checking...\"
+              sleep 3
             done
-            echo '❌ Health check failed'
+            echo '❌ Health check failed after 24 seconds'
+            echo '📋 Checking application logs...'
+            tail -n 50 /www/wwwroot/expat-compass/backend/logs/app.log || echo 'Log file not found'
             exit 1
           "
 
