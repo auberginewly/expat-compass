@@ -207,7 +207,7 @@ jobs:
           
           echo ""
           echo "🔍 正在连接到 ${SERVER_USER}@${SERVER_HOST}:${SERVER_PORT}"
-          ssh -p "${SERVER_PORT}" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=10 "${SERVER_USER}@${SERVER_HOST}" << 'EOF'
+          ssh -p "${SERVER_PORT}" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o ConnectTimeout=10 "${SERVER_USER}@${SERVER_HOST}" << 'EOF'
             # 使用 sudo 创建目录（ubuntu 用户需要 sudo 权限）
             sudo mkdir -p /www/wwwroot/expat-compass/{frontend,backend/uploads,backend/logs,backend/tmp} || mkdir -p /www/wwwroot/expat-compass/{frontend,backend/uploads,backend/logs,backend/tmp}
             # 设置权限
@@ -230,13 +230,13 @@ jobs:
           fi
           
           # 清空旧文件（保留 .htaccess 等配置文件）
-          ssh -p "${SERVER_PORT}" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=60 -o ServerAliveCountMax=3 "${SERVER_USER}@${SERVER_HOST}" "sudo rm -rf /www/wwwroot/expat-compass/frontend/* || rm -rf /www/wwwroot/expat-compass/frontend/*"
+          ssh -p "${SERVER_PORT}" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o ConnectTimeout=10 "${SERVER_USER}@${SERVER_HOST}" "sudo rm -rf /www/wwwroot/expat-compass/frontend/* || rm -rf /www/wwwroot/expat-compass/frontend/*"
           # 创建临时目录（使用用户主目录，避免 /tmp 权限问题）
-          ssh -p "${SERVER_PORT}" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=60 -o ServerAliveCountMax=3 "${SERVER_USER}@${SERVER_HOST}" "mkdir -p ~/expat-compass-frontend && rm -rf ~/expat-compass-frontend/*"
+          ssh -p "${SERVER_PORT}" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o ConnectTimeout=10 "${SERVER_USER}@${SERVER_HOST}" "mkdir -p ~/expat-compass-frontend && rm -rf ~/expat-compass-frontend/*"
           # 上传新文件到临时目录
-          scp -P "${SERVER_PORT}" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=60 -o ServerAliveCountMax=3 -r frontend/dist/* "${SERVER_USER}@${SERVER_HOST}:~/expat-compass-frontend/"
+          scp -P "${SERVER_PORT}" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o ConnectTimeout=10 -r frontend/dist/* "${SERVER_USER}@${SERVER_HOST}:~/expat-compass-frontend/"
           # 移动文件到目标目录并设置权限
-          ssh -p "${SERVER_PORT}" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=60 -o ServerAliveCountMax=3 "${SERVER_USER}@${SERVER_HOST}" << 'EOF'
+          ssh -p "${SERVER_PORT}" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o ConnectTimeout=10 "${SERVER_USER}@${SERVER_HOST}" << 'EOF'
             sudo mv ~/expat-compass-frontend/* /www/wwwroot/expat-compass/frontend/ 2>/dev/null || mv ~/expat-compass-frontend/* /www/wwwroot/expat-compass/frontend/
             sudo chown -R www:www /www/wwwroot/expat-compass/frontend 2>/dev/null || chown -R www:www /www/wwwroot/expat-compass/frontend 2>/dev/null || true
             rm -rf ~/expat-compass-frontend
@@ -261,7 +261,7 @@ jobs:
           echo "✅ Found JAR file: $JAR_FILE"
           
           # 备份旧版本
-          ssh -p "${SERVER_PORT}" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=60 -o ServerAliveCountMax=3 "${SERVER_USER}@${SERVER_HOST}" << 'EOF'
+          ssh -p "${SERVER_PORT}" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o ConnectTimeout=10 "${SERVER_USER}@${SERVER_HOST}" << 'EOF'
             if [ -f /www/wwwroot/expat-compass/backend/app.jar ]; then
               sudo cp /www/wwwroot/expat-compass/backend/app.jar /www/wwwroot/expat-compass/backend/app.jar.backup.$(date +%Y%m%d%H%M%S) 2>/dev/null || \
               cp /www/wwwroot/expat-compass/backend/app.jar /www/wwwroot/expat-compass/backend/app.jar.backup.$(date +%Y%m%d%H%M%S)
@@ -269,10 +269,10 @@ jobs:
           EOF
           
           # 上传新 JAR 到用户主目录（避免 /tmp 权限问题）
-          scp -P "${SERVER_PORT}" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=60 -o ServerAliveCountMax=3 "$JAR_FILE" "${SERVER_USER}@${SERVER_HOST}:~/app.jar"
+          scp -P "${SERVER_PORT}" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o ConnectTimeout=10 "$JAR_FILE" "${SERVER_USER}@${SERVER_HOST}:~/app.jar"
           
           # 移动文件到目标目录并设置权限
-          ssh -p "${SERVER_PORT}" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=60 -o ServerAliveCountMax=3 "${SERVER_USER}@${SERVER_HOST}" << 'EOF'
+          ssh -p "${SERVER_PORT}" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o ConnectTimeout=10 "${SERVER_USER}@${SERVER_HOST}" << 'EOF'
             if [ ! -f ~/app.jar ]; then
               echo "❌ Error: app.jar not found in home directory"
               exit 1
@@ -296,61 +296,32 @@ jobs:
           SERVER_PORT="${{ secrets.SERVER_PORT || '22' }}"
           SERVER_USER="${{ secrets.SERVER_USER }}"
           SERVER_HOST="${{ secrets.SERVER_HOST }}"
-          ssh -p "${SERVER_PORT}" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=60 -o ServerAliveCountMax=3 -o ConnectTimeout=30 "${SERVER_USER}@${SERVER_HOST}" << 'EOF'
+          ssh -p "${SERVER_PORT}" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o ConnectTimeout=10 "${SERVER_USER}@${SERVER_HOST}" << 'EOF'
             # 如果使用 systemd 服务
             if sudo systemctl is-active --quiet expat-compass 2>/dev/null || systemctl is-active --quiet expat-compass 2>/dev/null; then
               echo "Restarting via systemd..."
               sudo systemctl restart expat-compass
-              sleep 3
+              sleep 1
               sudo systemctl status expat-compass --no-pager || true
             else
               # 否则使用进程管理
               echo "Stopping old process..."
               sudo pkill -f "java.*app.jar" || pkill -f "java.*app.jar" || true
-              sleep 2
+              sleep 1
               
-              # 检查并安装 Java 环境
+              # 快速检查 Java 环境（跳过安装，假设已安装）
               echo "Checking Java installation..."
-              if ! command -v java &> /dev/null; then
-                echo "Java not found, installing OpenJDK 17..."
-                # 更新包列表，忽略部分包的404错误
-                sudo apt-get update -qq || true
-                # 尝试安装，如果失败则尝试修复
-                if ! sudo apt-get install -y openjdk-17-jdk; then
-                  echo "⚠️  First install attempt failed, trying with --fix-missing..."
-                  sudo apt-get install -y --fix-missing openjdk-17-jdk || {
-                    echo "⚠️  Install with --fix-missing failed, trying alternative method..."
-                    # 尝试只安装 JRE
-                    sudo apt-get install -y openjdk-17-jre || {
-                      echo "❌ Failed to install Java. Trying to find existing Java installation..."
-                      # 查找系统中可能存在的 Java
-                      if [ -d /usr/lib/jvm ]; then
-                        echo "Found Java installations in /usr/lib/jvm:"
-                        ls -la /usr/lib/jvm/ || true
-                        # 尝试使用找到的 Java
-                        for java_dir in /usr/lib/jvm/*/bin/java; do
-                          if [ -x "$java_dir" ]; then
-                            echo "Using found Java: $java_dir"
-                            sudo ln -sf "$java_dir" /usr/local/bin/java || true
-                            break
-                          fi
-                        done
-                      fi
-                    }
-                  }
-                fi
-              fi
-              
-              # 再次检查 Java
-              if ! command -v java &> /dev/null; then
-                # 尝试查找 Java 的完整路径
+              JAVA_CMD=""
+              if command -v java &> /dev/null; then
+                JAVA_CMD=$(which java)
+              else
+                # 尝试查找 Java 的完整路径（不安装，只查找）
                 JAVA_PATHS=(
                   "/usr/bin/java"
                   "/usr/lib/jvm/java-17-openjdk-amd64/bin/java"
                   "/usr/lib/jvm/java-17-openjdk/bin/java"
                   "/usr/lib/jvm/default-java/bin/java"
                 )
-                JAVA_CMD=""
                 for path in "${JAVA_PATHS[@]}"; do
                   if [ -x "$path" ]; then
                     JAVA_CMD="$path"
@@ -360,17 +331,12 @@ jobs:
                 done
                 
                 if [ -z "$JAVA_CMD" ]; then
-                  echo "❌ Error: Java not found and installation failed"
+                  echo "❌ Error: Java not found"
                   echo "Please install Java manually: sudo apt-get install -y openjdk-17-jdk"
                   exit 1
                 fi
-              else
-                JAVA_CMD=$(which java)
               fi
               
-              # 验证 Java 版本
-              JAVA_VERSION=$("$JAVA_CMD" -version 2>&1 | head -n 1 || echo "")
-              echo "Java version: $JAVA_VERSION"
               echo "Using Java: $JAVA_CMD"
               
               echo "Starting new process..."
@@ -426,34 +392,23 @@ jobs:
               echo "✅ Created temp directory: $APP_TMP_DIR"
               
               # 尝试使用 sudo -u www 启动
-              echo "Starting with: $JAVA_CMD -jar -Xms512m -Xmx1024m -Dspring.profiles.active=prod -Djava.io.tmpdir=$APP_TMP_DIR $JAR_FILE"
-              # 切换到日志目录，确保可以写入
+              echo "Starting application..."
               cd /www/wwwroot/expat-compass/backend
               sudo -u www bash -c "cd /www/wwwroot/expat-compass/backend && nohup '$JAVA_CMD' -jar -Xms512m -Xmx1024m -Dspring.profiles.active=prod -Djava.io.tmpdir='$APP_TMP_DIR' '$JAR_FILE' > '$LOG_FILE' 2>&1 &" || {
                 echo "Failed with sudo -u www, trying without sudo..."
                 nohup "$JAVA_CMD" -jar -Xms512m -Xmx1024m -Dspring.profiles.active=prod -Djava.io.tmpdir="$APP_TMP_DIR" "$JAR_FILE" > "$LOG_FILE" 2>&1 &
               }
-              # 等待一下，检查是否启动成功
-              sleep 2
-                sleep 2
+              # 快速检查进程是否启动
+              sleep 1
               if ! pgrep -f "java.*app.jar" > /dev/null; then
-                echo "Process not found, checking if it started..."
-                # 如果进程不存在，尝试不使用 sudo 启动
+                echo "Process not found, retrying without sudo..."
                 sudo chmod 666 "$LOG_FILE" 2>/dev/null || chmod 666 "$LOG_FILE" 2>/dev/null || true
-                # 确保临时目录存在
-                APP_TMP_DIR="/www/wwwroot/expat-compass/backend/tmp"
                 mkdir -p "$APP_TMP_DIR" || true
                 chmod 777 "$APP_TMP_DIR" || true
-                echo "Starting without sudo: $JAVA_CMD -jar -Xms512m -Xmx1024m -Dspring.profiles.active=prod -Djava.io.tmpdir=$APP_TMP_DIR $JAR_FILE"
                 cd /www/wwwroot/expat-compass/backend
                 nohup "$JAVA_CMD" -jar -Xms512m -Xmx1024m -Dspring.profiles.active=prod -Djava.io.tmpdir="$APP_TMP_DIR" "$JAR_FILE" > "$LOG_FILE" 2>&1 &
-                sleep 3
+                sleep 1
               fi
-              sleep 3
-              
-              # 检查是否启动成功（快速检查，详细等待交给健康检查）
-              echo "Checking if process started..."
-              sleep 3
               
               # 检查进程
               if pgrep -f "java.*app.jar" > /dev/null; then
@@ -462,29 +417,13 @@ jobs:
                 ps aux | grep "java.*app.jar" | grep -v grep || true
                 echo ""
                 
-                # 快速检查端口（只等待 15 秒，详细等待交给健康检查）
-                PORT_READY=false
-                for i in {1..3}; do
-                  if ss -tln 2>/dev/null | grep -q ":8080" || netstat -tln 2>/dev/null | grep -q ":8080"; then
-                    PORT_READY=true
-                    echo "✅ Port 8080 is listening"
-                    ss -tln 2>/dev/null | grep 8080 || netstat -tln 2>/dev/null | grep 8080
-                    break
-                  fi
-                  sleep 5
-                done
-                
-                if [ "$PORT_READY" = "false" ]; then
-                  echo "⚠️  Port 8080 not listening yet (application may still be starting)"
-                  echo "   This is normal - Spring Boot can take 30-60 seconds to start"
-                  echo "   Health check will wait for the application to be ready"
-                  echo ""
-                  echo "   Current application log (last 20 lines):"
-                  if [ -f "$LOG_FILE" ]; then
-                    tail -20 "$LOG_FILE" 2>/dev/null | sed 's/^/   /' || echo "   (log file empty or not readable)"
-                  else
-                    echo "   (log file not found)"
-                  fi
+                # 快速检查端口（只检查一次，不等待）
+                if ss -tln 2>/dev/null | grep -q ":8080" || netstat -tln 2>/dev/null | grep -q ":8080"; then
+                  echo "✅ Port 8080 is listening"
+                  ss -tln 2>/dev/null | grep 8080 || netstat -tln 2>/dev/null | grep 8080
+                else
+                  echo "⚠️  Port 8080 not listening yet (normal, Spring Boot takes 30-60s to start)"
+                  echo "   Health check will wait for the application"
                 fi
               else
                 echo "❌ Backend service failed to start"
@@ -515,136 +454,40 @@ jobs:
       - name: Health check
         run: |
           SERVER_PORT="${{ secrets.SERVER_PORT || '22' }}"
-          ssh -p "${SERVER_PORT}" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=60 -o ServerAliveCountMax=3 ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
-            echo "Waiting for service to start..."
-            sleep 15  # 增加初始等待时间
+          ssh -p "${SERVER_PORT}" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o ConnectTimeout=10 ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
+            echo "Starting health check..."
             
-            # 检查 PostgreSQL 是否运行
-            echo "Checking PostgreSQL status..."
-            if ! sudo systemctl is-active --quiet postgresql 2>/dev/null && ! systemctl is-active --quiet postgresql 2>/dev/null; then
-              echo "⚠️  Warning: PostgreSQL service is not running"
-              # 尝试检查宝塔面板的 PostgreSQL
-              if pgrep -f "postgres" > /dev/null; then
-                echo "✅ PostgreSQL 进程正在运行（可能是宝塔面板安装的）"
-              else
-                echo "Please start PostgreSQL: sudo systemctl start postgresql"
-              fi
-            else
-              echo "✅ PostgreSQL service is running"
-            fi
-            
-            # 检查端口是否监听
-            if ! netstat -tlnp 2>/dev/null | grep -q ":5432" && ! ss -tlnp 2>/dev/null | grep -q ":5432"; then
-              echo "⚠️  Warning: PostgreSQL is not listening on port 5432"
-              # 检查其他端口
-              netstat -tlnp 2>/dev/null | grep postgres || ss -tlnp 2>/dev/null | grep postgres || echo "未找到 PostgreSQL 监听端口"
-            else
-              echo "✅ PostgreSQL is listening on port 5432"
-            fi
-            
-            # 检查应用进程
-            echo ""
-            echo "Checking application process..."
-            if pgrep -f "java.*app.jar" > /dev/null; then
-              echo "✅ Application process is running"
-              ps aux | grep "java.*app.jar" | grep -v grep | head -1
-            else
+            # 快速检查应用进程
+            if ! pgrep -f "java.*app.jar" > /dev/null; then
               echo "❌ Application process is not running"
-              echo "查看应用日志："
-              tail -50 /www/wwwroot/expat-compass/backend/logs/app.log 2>/dev/null || echo "日志文件不存在"
+              tail -30 /www/wwwroot/expat-compass/backend/logs/app.log 2>/dev/null || echo "日志文件不存在"
               exit 1
             fi
+            echo "✅ Application process is running"
             
-            # 检查应用端口（等待应用启动）
-            echo ""
-            echo "Checking application port 8080..."
-            PORT_READY=false
-            for i in {1..12}; do
+            # 健康检查（8次重试，每次3秒，总共24秒）
+            echo "Waiting for service to be ready (max 24 seconds)..."
+            for i in {1..8}; do
               if ss -tln 2>/dev/null | grep -q ":8080" || netstat -tln 2>/dev/null | grep -q ":8080"; then
-                PORT_READY=true
-                echo "✅ Port 8080 is listening (after $((i*5)) seconds)"
-                ss -tln 2>/dev/null | grep 8080 || netstat -tln 2>/dev/null | grep 8080
-                break
-              fi
-              if [ "$i" -le 3 ]; then
-                echo "   Waiting for port 8080... ($i/12)"
-              fi
-              sleep 5
-            done
-            
-            if [ "$PORT_READY" = "false" ]; then
-              echo "⚠️  Port 8080 is not listening after 60 seconds"
-              echo "   Application may still be starting or encountered an error"
-              echo "   Checking application logs..."
-              tail -50 /www/wwwroot/expat-compass/backend/logs/app.log 2>/dev/null | tail -30 | sed 's/^/   /' || echo "   (无日志)"
-              echo ""
-              echo "   Health check will continue to retry..."
-            fi
-            
-            # 健康检查（增加重试次数和等待时间）
-            echo ""
-            echo "Starting health check..."
-            echo "Note: Spring Boot applications can take 30-90 seconds to fully start"
-            echo ""
-            PORT_LISTENING=false
-            for i in {1..30}; do
-              # 先检查端口是否监听（使用不需要 root 权限的方法）
-              if ss -tln 2>/dev/null | grep -q ":8080" || netstat -tln 2>/dev/null | grep -q ":8080"; then
-                PORT_LISTENING=true
-                # 尝试健康检查
                 if curl -f -s http://localhost:8080/api/health > /dev/null 2>&1; then
-                  echo "✅ Health check passed!"
+                  echo "✅ Health check passed! (${i} attempts)"
                   exit 0
                 fi
-                # 如果端口监听但健康检查失败，显示响应内容
-                RESPONSE=$(curl -s -w "\nHTTP Status: %{http_code}" http://localhost:8080/api/health 2>&1 || echo "连接失败")
-                if [ "$i" -eq 5 ] || [ "$i" -eq 10 ] || [ "$i" -eq 15 ] || [ "$i" -eq 20 ] || [ "$i" -eq 25 ] || [ "$i" -eq 30 ]; then
-                  echo "   [尝试 $i/30] 健康检查响应: $RESPONSE"
-                  # 显示应用日志的最后几行
-                  echo "   应用日志 (最后 15 行):"
-                  tail -15 /www/wwwroot/expat-compass/backend/logs/app.log 2>/dev/null | sed 's/^/     /' || echo "     (无日志)"
-                  echo ""
-                fi
-              else
-                # 端口未监听，显示应用日志
-                if [ "$i" -eq 5 ] || [ "$i" -eq 10 ] || [ "$i" -eq 15 ] || [ "$i" -eq 20 ] || [ "$i" -eq 25 ] || [ "$i" -eq 30 ]; then
-                  echo "   [尝试 $i/30] 端口 8080 尚未监听，检查应用状态..."
-                  echo "   应用进程:"
-                  ps aux | grep "java.*app.jar" | grep -v grep | head -1 || echo "     (未找到进程)"
-                  echo "   应用日志 (最后 30 行，查找错误):"
-                  tail -30 /www/wwwroot/expat-compass/backend/logs/app.log 2>/dev/null | sed 's/^/     /' || echo "     (无日志)"
-                  echo ""
-                fi
               fi
-              if [ "$i" -lt 30 ]; then
-                echo "Attempt $i/30: Service not ready, waiting 5s..."
-                sleep 5
+              if [ $((i % 2)) -eq 0 ]; then
+                echo "   [$i/8] 等待应用就绪..."
+              fi
+              if [ "$i" -lt 8 ]; then
+                sleep 3
               fi
             done
             
-            # 如果端口一直未监听，显示更多信息
-            if [ "$PORT_LISTENING" = "false" ]; then
-              echo ""
-              echo "⚠️  端口 8080 在 100 秒内一直未监听，应用可能启动失败"
-            fi
-            
-            echo "❌ Health check failed after 20 attempts"
-            echo ""
-            echo "=== Application Process Status ==="
-            ps aux | grep "java.*app.jar" | grep -v grep || echo "No Java process found"
-            echo ""
-            echo "=== Port 8080 Status ==="
-            ss -tln 2>/dev/null | grep 8080 || netstat -tln 2>/dev/null | grep 8080 || echo "Port 8080 is not listening"
-            echo ""
-            echo "=== Last 100 lines of application log ==="
-            tail -100 /www/wwwroot/expat-compass/backend/logs/app.log 2>/dev/null || echo "日志文件不存在或为空"
-            echo ""
-            echo "=== Testing HTTP connection ==="
-            curl -v http://localhost:8080/api/health 2>&1 | head -20 || echo "无法连接到应用"
-            echo ""
-            echo "=== Database connection test ==="
-            echo "检查数据库用户是否存在："
-            sudo -u postgres /www/server/pgsql/bin/psql -h localhost -p 5432 -tAc "SELECT 1 FROM pg_user WHERE usename='auberginewly'" 2>/dev/null || echo "无法连接到数据库或用户不存在"
+            # 失败时显示关键信息
+            echo "❌ Health check failed after 24 seconds"
+            echo "应用状态:"
+            ps aux | grep "java.*app.jar" | grep -v grep | head -1 || echo "  进程未运行"
+            ss -tln 2>/dev/null | grep 8080 || echo "  端口 8080 未监听"
+            tail -20 /www/wwwroot/expat-compass/backend/logs/app.log 2>/dev/null || echo "日志文件不存在"
             exit 1
           EOF
 
