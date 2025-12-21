@@ -207,7 +207,7 @@ jobs:
           
           echo ""
           echo "🔍 正在连接到 ${SERVER_USER}@${SERVER_HOST}:${SERVER_PORT}"
-          ssh -p "${SERVER_PORT}" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o ConnectTimeout=10 "${SERVER_USER}@${SERVER_HOST}" << 'EOF'
+          ssh -p "${SERVER_PORT}" -T -q -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o ConnectTimeout=10 -o LogLevel=ERROR "${SERVER_USER}@${SERVER_HOST}" << 'EOF'
             # 使用 sudo 创建目录（ubuntu 用户需要 sudo 权限）
             sudo mkdir -p /www/wwwroot/expat-compass/{frontend,backend/uploads,backend/logs,backend/tmp} || mkdir -p /www/wwwroot/expat-compass/{frontend,backend/uploads,backend/logs,backend/tmp}
             # 设置权限
@@ -222,6 +222,7 @@ jobs:
           SERVER_PORT="${{ secrets.SERVER_PORT || '22' }}"
           SERVER_USER="${{ secrets.SERVER_USER }}"
           SERVER_HOST="${{ secrets.SERVER_HOST }}"
+          SSH_OPTS="-p ${SERVER_PORT} -T -q -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o ConnectTimeout=10 -o LogLevel=ERROR"
           
           # 检查前端构建产物是否存在
           if [ ! -d "frontend/dist" ] || [ -z "$(ls -A frontend/dist 2>/dev/null)" ]; then
@@ -229,18 +230,25 @@ jobs:
             exit 0
           fi
           
-          # 清空旧文件（保留 .htaccess 等配置文件）
-          ssh -p "${SERVER_PORT}" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o ConnectTimeout=10 "${SERVER_USER}@${SERVER_HOST}" "sudo rm -rf /www/wwwroot/expat-compass/frontend/* || rm -rf /www/wwwroot/expat-compass/frontend/*"
-          # 创建临时目录（使用用户主目录，避免 /tmp 权限问题）
-          ssh -p "${SERVER_PORT}" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o ConnectTimeout=10 "${SERVER_USER}@${SERVER_HOST}" "mkdir -p ~/expat-compass-frontend && rm -rf ~/expat-compass-frontend/*"
-          # 上传新文件到临时目录
-          scp -P "${SERVER_PORT}" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o ConnectTimeout=10 -r frontend/dist/* "${SERVER_USER}@${SERVER_HOST}:~/expat-compass-frontend/"
-          # 移动文件到目标目录并设置权限
-          ssh -p "${SERVER_PORT}" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o ConnectTimeout=10 "${SERVER_USER}@${SERVER_HOST}" << 'EOF'
+          echo "📦 Preparing deployment..."
+          # 一次性执行所有准备操作（减少 SSH 连接次数）
+          ssh ${SSH_OPTS} "${SERVER_USER}@${SERVER_HOST}" << 'PREP_EOF'
+            # 清空旧文件并创建临时目录
+            sudo rm -rf /www/wwwroot/expat-compass/frontend/* || rm -rf /www/wwwroot/expat-compass/frontend/* || true
+            mkdir -p ~/expat-compass-frontend && rm -rf ~/expat-compass-frontend/*
+          PREP_EOF
+          
+          echo "📤 Uploading files..."
+          # 上传文件（使用压缩传输可加快速度）
+          scp ${SSH_OPTS} -C -r frontend/dist/* "${SERVER_USER}@${SERVER_HOST}:~/expat-compass-frontend/"
+          
+          echo "🚀 Moving files to target directory..."
+          # 移动文件并设置权限（一次性完成）
+          ssh ${SSH_OPTS} "${SERVER_USER}@${SERVER_HOST}" << 'DEPLOY_EOF'
             sudo mv ~/expat-compass-frontend/* /www/wwwroot/expat-compass/frontend/ 2>/dev/null || mv ~/expat-compass-frontend/* /www/wwwroot/expat-compass/frontend/
             sudo chown -R www:www /www/wwwroot/expat-compass/frontend 2>/dev/null || chown -R www:www /www/wwwroot/expat-compass/frontend 2>/dev/null || true
             rm -rf ~/expat-compass-frontend
-          EOF
+          DEPLOY_EOF
           echo "✅ Frontend deployed successfully"
 
       - name: Deploy backend
@@ -249,6 +257,7 @@ jobs:
           SERVER_PORT="${{ secrets.SERVER_PORT || '22' }}"
           SERVER_USER="${{ secrets.SERVER_USER }}"
           SERVER_HOST="${{ secrets.SERVER_HOST }}"
+          SSH_OPTS="-p ${SERVER_PORT} -T -q -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o ConnectTimeout=10 -o LogLevel=ERROR"
           
           # 检查 JAR 文件是否存在
           JAR_FILE=$(find backend/target -name "*.jar" ! -name "*-sources.jar" ! -name "*-javadoc.jar" | head -n 1)
@@ -260,19 +269,23 @@ jobs:
           fi
           echo "✅ Found JAR file: $JAR_FILE"
           
-          # 备份旧版本
-          ssh -p "${SERVER_PORT}" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o ConnectTimeout=10 "${SERVER_USER}@${SERVER_HOST}" << 'EOF'
+          echo "📦 Preparing deployment..."
+          # 备份旧版本并准备临时目录
+          ssh ${SSH_OPTS} "${SERVER_USER}@${SERVER_HOST}" << 'PREP_EOF'
             if [ -f /www/wwwroot/expat-compass/backend/app.jar ]; then
               sudo cp /www/wwwroot/expat-compass/backend/app.jar /www/wwwroot/expat-compass/backend/app.jar.backup.$(date +%Y%m%d%H%M%S) 2>/dev/null || \
-              cp /www/wwwroot/expat-compass/backend/app.jar /www/wwwroot/expat-compass/backend/app.jar.backup.$(date +%Y%m%d%H%M%S)
+              cp /www/wwwroot/expat-compass/backend/app.jar /www/wwwroot/expat-compass/backend/app.jar.backup.$(date +%Y%m%d%H%M%S) || true
             fi
-          EOF
+            rm -f ~/app.jar
+          PREP_EOF
           
-          # 上传新 JAR 到用户主目录（避免 /tmp 权限问题）
-          scp -P "${SERVER_PORT}" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o ConnectTimeout=10 "$JAR_FILE" "${SERVER_USER}@${SERVER_HOST}:~/app.jar"
+          echo "📤 Uploading JAR file..."
+          # 上传新 JAR（使用压缩传输）
+          scp ${SSH_OPTS} -C "$JAR_FILE" "${SERVER_USER}@${SERVER_HOST}:~/app.jar"
           
-          # 移动文件到目标目录并设置权限
-          ssh -p "${SERVER_PORT}" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o ConnectTimeout=10 "${SERVER_USER}@${SERVER_HOST}" << 'EOF'
+          echo "🚀 Moving JAR to target directory..."
+          # 移动文件并设置权限（一次性完成）
+          ssh ${SSH_OPTS} "${SERVER_USER}@${SERVER_HOST}" << 'DEPLOY_EOF'
             if [ ! -f ~/app.jar ]; then
               echo "❌ Error: app.jar not found in home directory"
               exit 1
@@ -282,13 +295,11 @@ jobs:
               echo "❌ Error: Failed to move app.jar to target directory"
               exit 1
             fi
-            # 设置文件权限（可执行）
             sudo chmod 755 /www/wwwroot/expat-compass/backend/app.jar 2>/dev/null || chmod 755 /www/wwwroot/expat-compass/backend/app.jar 2>/dev/null || true
             sudo chown www:www /www/wwwroot/expat-compass/backend/app.jar 2>/dev/null || chown www:www /www/wwwroot/expat-compass/backend/app.jar 2>/dev/null || true
             echo "✅ JAR file deployed successfully"
             ls -lh /www/wwwroot/expat-compass/backend/app.jar || true
-            rm -f ~/app.jar
-          EOF
+          DEPLOY_EOF
 
       - name: Restart backend service
         if: steps.changes.outputs.build_backend == 'true'
@@ -296,7 +307,7 @@ jobs:
           SERVER_PORT="${{ secrets.SERVER_PORT || '22' }}"
           SERVER_USER="${{ secrets.SERVER_USER }}"
           SERVER_HOST="${{ secrets.SERVER_HOST }}"
-          ssh -p "${SERVER_PORT}" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o ConnectTimeout=10 "${SERVER_USER}@${SERVER_HOST}" << 'EOF'
+          ssh -p "${SERVER_PORT}" -T -q -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o ConnectTimeout=10 -o LogLevel=ERROR "${SERVER_USER}@${SERVER_HOST}" << 'EOF'
             # 如果使用 systemd 服务
             if sudo systemctl is-active --quiet expat-compass 2>/dev/null || systemctl is-active --quiet expat-compass 2>/dev/null; then
               echo "Restarting via systemd..."
@@ -454,7 +465,7 @@ jobs:
       - name: Health check
         run: |
           SERVER_PORT="${{ secrets.SERVER_PORT || '22' }}"
-          ssh -p "${SERVER_PORT}" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o ConnectTimeout=10 ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
+          ssh -p "${SERVER_PORT}" -T -q -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o ConnectTimeout=10 -o LogLevel=ERROR ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
             echo "Starting health check..."
             
             # 快速检查应用进程
