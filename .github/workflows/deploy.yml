@@ -208,13 +208,13 @@ jobs:
           echo ""
           echo "🔍 正在连接到 ${SERVER_USER}@${SERVER_HOST}:${SERVER_PORT}"
           ssh -p "${SERVER_PORT}" -T -q -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o ConnectTimeout=10 -o LogLevel=ERROR "${SERVER_USER}@${SERVER_HOST}" << 'EOF'
-            # 使用 sudo 创建目录（ubuntu 用户需要 sudo 权限）
-            sudo mkdir -p /www/wwwroot/expat-compass/{frontend,backend/uploads,backend/logs,backend/tmp} || mkdir -p /www/wwwroot/expat-compass/{frontend,backend/uploads,backend/logs,backend/tmp}
-            # 设置权限
-            sudo chown -R www:www /www/wwwroot/expat-compass 2>/dev/null || chown -R www:www /www/wwwroot/expat-compass 2>/dev/null || true
-            # 确保临时目录有写权限
-            sudo chmod 777 /www/wwwroot/expat-compass/backend/tmp 2>/dev/null || chmod 777 /www/wwwroot/expat-compass/backend/tmp 2>/dev/null || true
-          EOF
+# 使用 sudo 创建目录（ubuntu 用户需要 sudo 权限）
+sudo mkdir -p /www/wwwroot/expat-compass/{frontend,backend/uploads,backend/logs,backend/tmp} || mkdir -p /www/wwwroot/expat-compass/{frontend,backend/uploads,backend/logs,backend/tmp}
+# 设置权限
+sudo chown -R www:www /www/wwwroot/expat-compass 2>/dev/null || chown -R www:www /www/wwwroot/expat-compass 2>/dev/null || true
+# 确保临时目录有写权限
+sudo chmod 777 /www/wwwroot/expat-compass/backend/tmp 2>/dev/null || chmod 777 /www/wwwroot/expat-compass/backend/tmp 2>/dev/null || true
+EOF
 
       - name: Deploy frontend
         if: steps.changes.outputs.build_frontend == 'true'
@@ -239,11 +239,11 @@ jobs:
           
           echo "🚀 Moving files to target directory..."
           ssh ${SSH_OPTS} "${SERVER_USER}@${SERVER_HOST}" << 'DEPLOY_EOF'
-            sudo rm -rf /www/wwwroot/expat-compass/frontend/*
-            sudo mv ~/expat-compass-frontend/* /www/wwwroot/expat-compass/frontend/
-            sudo chown -R www:www /www/wwwroot/expat-compass/frontend
-            rm -rf ~/expat-compass-frontend
-          DEPLOY_EOF
+sudo rm -rf /www/wwwroot/expat-compass/frontend/*
+sudo mv ~/expat-compass-frontend/* /www/wwwroot/expat-compass/frontend/
+sudo chown -R www:www /www/wwwroot/expat-compass/frontend
+rm -rf ~/expat-compass-frontend
+DEPLOY_EOF
           echo "✅ Frontend deployed successfully"
 
       - name: Deploy backend
