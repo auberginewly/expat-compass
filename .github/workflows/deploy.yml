@@ -325,10 +325,7 @@ jobs:
             
             # 使用 rsync 同步层（支持增量传输和断点续传）
             # 先同步到用户目录，然后通过 SSH 移动到目标目录（避免权限问题）
-            ssh ${SSH_OPTS} "${SERVER_USER}@${SERVER_HOST}" << 'RSYNC_PREP_EOF'
-mkdir -p ~/rsync-temp
-rm -rf ~/rsync-temp/*
-RSYNC_PREP_EOF
+            ssh ${SSH_OPTS} "${SERVER_USER}@${SERVER_HOST}" "mkdir -p ~/rsync-temp && rm -rf ~/rsync-temp/*"
             
             if [ "$NEED_DEPENDENCIES" = true ]; then
               echo "  Syncing all layers with rsync..."
