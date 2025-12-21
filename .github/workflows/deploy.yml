@@ -317,11 +317,7 @@ jobs:
             fi
             
             # 准备远程目录
-            BACKEND_DIR="/www/wwwroot/expat-compass/backend"
-            ssh ${SSH_OPTS} "${SERVER_USER}@${SERVER_HOST}" << 'PREP_EOF'
-BACKEND_DIR="/www/wwwroot/expat-compass/backend"
-sudo mkdir -p "$BACKEND_DIR" || true
-PREP_EOF
+            ssh ${SSH_OPTS} "${SERVER_USER}@${SERVER_HOST}" "BACKEND_DIR=\"/www/wwwroot/expat-compass/backend\" && sudo mkdir -p \"\$BACKEND_DIR\" || true"
             
             # 上传 app.jar（systemd 需要它来启动）
             echo "  Uploading app.jar (launcher)..."
