@@ -136,6 +136,9 @@
                 <configuration>
                     <mainClass>com.expats.nanchang.GatewayApplication</mainClass>
                     <executable>true</executable>
+                    <layers>
+                        <enabled>true</enabled>
+                    </layers>
                 </configuration>
                 <executions>
                     <execution>

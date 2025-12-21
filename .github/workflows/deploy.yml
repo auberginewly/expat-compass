@@ -252,7 +252,6 @@ jobs:
           SERVER_PORT="${{ secrets.SERVER_PORT || '22' }}"
           SERVER_USER="${{ secrets.SERVER_USER }}"
           SERVER_HOST="${{ secrets.SERVER_HOST }}"
-          # 关键修改：ssh 和 scp 参数分开定义
           SSH_OPTS="-p ${SERVER_PORT} -T -q -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o ConnectTimeout=10 -o LogLevel=ERROR"
           SCP_OPTS="-P ${SERVER_PORT} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o ConnectTimeout=10"
           
@@ -260,40 +259,137 @@ jobs:
           JAR_FILE=$(find backend/target -name "*.jar" ! -name "*-sources.jar" ! -name "*-javadoc.jar" | head -n 1)
           if [ -z "$JAR_FILE" ]; then
             echo "❌ Error: JAR file not found in backend/target/"
-            echo "Available files:"
             ls -la backend/target/ || true
             exit 1
           fi
           echo "✅ Found JAR file: $JAR_FILE"
           
-          echo "📦 Preparing and Uploading..."
-          ssh ${SSH_OPTS} "${SERVER_USER}@${SERVER_HOST}" << 'PREP_EOF'
-            if [ -f /www/wwwroot/expat-compass/backend/app.jar ]; then
-              sudo cp /www/wwwroot/expat-compass/backend/app.jar /www/wwwroot/expat-compass/backend/app.jar.backup.$(date +%Y%m%d%H%M%S) 2>/dev/null || \
-              cp /www/wwwroot/expat-compass/backend/app.jar /www/wwwroot/expat-compass/backend/app.jar.backup.$(date +%Y%m%d%H%M%S) || true
+          # 检查是否使用分层 JAR（检查是否存在 BOOT-INF/layers.idx）
+          if unzip -l "$JAR_FILE" 2>/dev/null | grep -q "BOOT-INF/layers.idx"; then
+            echo "📦 Detected layered JAR, extracting layers..."
+            
+            # 提取分层 JAR
+            LAYERS_DIR="backend/target/layers"
+            mkdir -p "$LAYERS_DIR"
+            cd "$LAYERS_DIR"
+            unzip -q "../../$JAR_FILE" "BOOT-INF/layers.idx" 2>/dev/null || true
+            
+            # 使用 Spring Boot 的 jarmode 提取层
+            cd ../..
+            java -Djarmode=layertools -jar "$JAR_FILE" extract --destination "$LAYERS_DIR" || {
+              echo "⚠️  jarmode extract failed, falling back to full JAR upload"
+              LAYERED_DEPLOY=false
+            }
+            
+            if [ -d "$LAYERS_DIR/application" ]; then
+              LAYERED_DEPLOY=true
+              echo "✅ Layers extracted successfully"
+            else
+              LAYERED_DEPLOY=false
+              echo "⚠️  Layers extraction failed, using full JAR"
             fi
-            rm -f ~/app.jar
-          PREP_EOF
+          else
+            LAYERED_DEPLOY=false
+            echo "📦 Using traditional JAR deployment"
+          fi
           
-          # 使用大写的 -P 参数，且不使用 SSH_OPTS（因为包含 -T 等 scp 不支持的参数）
-          scp ${SCP_OPTS} -C "$JAR_FILE" "${SERVER_USER}@${SERVER_HOST}:~/app.jar"
-          
-          echo "🚀 Moving JAR to target..."
-          ssh ${SSH_OPTS} "${SERVER_USER}@${SERVER_HOST}" << 'DEPLOY_EOF'
-            if [ ! -f ~/app.jar ]; then
-              echo "❌ Error: app.jar not found in home directory"
-              exit 1
+          if [ "$LAYERED_DEPLOY" = true ]; then
+            echo "📤 Uploading layered JAR (optimized)..."
+            
+            # 检查是否需要上传依赖层（pom.xml 是否变化）
+            NEED_DEPENDENCIES=false
+            if [ "${{ github.event_name }}" == "push" ] && [ -n "${{ github.event.before }}" ]; then
+              CHANGED_FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }})
+              if echo "$CHANGED_FILES" | grep -qE "^backend/pom.xml"; then
+                NEED_DEPENDENCIES=true
+                echo "📦 pom.xml changed, will upload all layers"
+              fi
+            else
+              # 首次部署或无法检测，上传所有层
+              NEED_DEPENDENCIES=true
             fi
-            sudo mv ~/app.jar /www/wwwroot/expat-compass/backend/app.jar 2>/dev/null || mv ~/app.jar /www/wwwroot/expat-compass/backend/app.jar
-            if [ ! -f /www/wwwroot/expat-compass/backend/app.jar ]; then
-              echo "❌ Error: Failed to move app.jar to target directory"
-              exit 1
+            
+            # 准备远程目录
+            ssh ${SSH_OPTS} "${SERVER_USER}@${SERVER_HOST}" << 'PREP_EOF'
+              mkdir -p ~/backend-layers
+              rm -rf ~/backend-layers/*
+            PREP_EOF
+            
+            # 上传 app.jar（systemd 需要它来启动）
+            echo "  Uploading app.jar (launcher)..."
+            scp ${SCP_OPTS} -C "$JAR_FILE" "${SERVER_USER}@${SERVER_HOST}:~/app.jar"
+            
+            # 上传层（只上传需要的）
+            if [ "$NEED_DEPENDENCIES" = true ]; then
+              echo "  Uploading all layers..."
+              for layer in dependencies spring-boot-loader snapshot-dependencies application; do
+                if [ -d "$LAYERS_DIR/$layer" ]; then
+                  echo "    Uploading $layer layer..."
+                  (cd "$LAYERS_DIR" && tar czf - "$layer") | ssh ${SSH_OPTS} "${SERVER_USER}@${SERVER_HOST}" "cd ~/backend-layers && tar xzf -"
+                fi
+              done
+            else
+              echo "  Uploading only application layer (dependencies unchanged)..."
+              (cd "$LAYERS_DIR" && tar czf - application) | ssh ${SSH_OPTS} "${SERVER_USER}@${SERVER_HOST}" "cd ~/backend-layers && tar xzf -"
             fi
-            sudo chmod 755 /www/wwwroot/expat-compass/backend/app.jar 2>/dev/null || chmod 755 /www/wwwroot/expat-compass/backend/app.jar 2>/dev/null || true
-            sudo chown www:www /www/wwwroot/expat-compass/backend/app.jar 2>/dev/null || chown www:www /www/wwwroot/expat-compass/backend/app.jar 2>/dev/null || true
-            echo "✅ JAR file deployed successfully"
-            ls -lh /www/wwwroot/expat-compass/backend/app.jar || true
-          DEPLOY_EOF
+            
+            # 部署到目标目录
+            ssh ${SSH_OPTS} "${SERVER_USER}@${SERVER_HOST}" << 'DEPLOY_EOF'
+              BACKEND_DIR="/www/wwwroot/expat-compass/backend"
+              
+              # 备份旧版本（如果存在）
+              if [ -f "$BACKEND_DIR/app.jar" ]; then
+                sudo cp "$BACKEND_DIR/app.jar" "$BACKEND_DIR/app.jar.backup.$(date +%Y%m%d%H%M%S)" 2>/dev/null || true
+              fi
+              
+              # 如果首次部署或需要更新依赖，同步所有层
+              if [ ! -d "$BACKEND_DIR/dependencies" ] || [ -d ~/backend-layers/dependencies ]; then
+                echo "  Syncing all layers..."
+                sudo rm -rf "$BACKEND_DIR/dependencies" "$BACKEND_DIR/spring-boot-loader" "$BACKEND_DIR/snapshot-dependencies" "$BACKEND_DIR/application" 2>/dev/null || true
+                sudo mv ~/backend-layers/* "$BACKEND_DIR/" 2>/dev/null || true
+              else
+                echo "  Syncing only application layer..."
+                sudo rm -rf "$BACKEND_DIR/application" 2>/dev/null || true
+                sudo mv ~/backend-layers/application "$BACKEND_DIR/" 2>/dev/null || true
+              fi
+              
+              # 设置权限
+              sudo chown -R www:www "$BACKEND_DIR/dependencies" "$BACKEND_DIR/spring-boot-loader" "$BACKEND_DIR/snapshot-dependencies" "$BACKEND_DIR/application" 2>/dev/null || true
+              sudo chmod -R 755 "$BACKEND_DIR/dependencies" "$BACKEND_DIR/spring-boot-loader" "$BACKEND_DIR/snapshot-dependencies" "$BACKEND_DIR/application" 2>/dev/null || true
+              
+              # 创建启动 JAR（使用原始 JAR 作为启动器）
+              if [ -f ~/app.jar ]; then
+                sudo mv ~/app.jar "$BACKEND_DIR/app.jar" 2>/dev/null || true
+                sudo chmod 755 "$BACKEND_DIR/app.jar" 2>/dev/null || true
+                sudo chown www:www "$BACKEND_DIR/app.jar" 2>/dev/null || true
+              fi
+              
+              rm -rf ~/backend-layers
+              echo "✅ Layered JAR deployed successfully"
+            DEPLOY_EOF
+          else
+            # 传统 JAR 部署
+            echo "📤 Uploading full JAR..."
+            ssh ${SSH_OPTS} "${SERVER_USER}@${SERVER_HOST}" << 'PREP_EOF'
+              if [ -f /www/wwwroot/expat-compass/backend/app.jar ]; then
+                sudo cp /www/wwwroot/expat-compass/backend/app.jar /www/wwwroot/expat-compass/backend/app.jar.backup.$(date +%Y%m%d%H%M%S) 2>/dev/null || true
+              fi
+              rm -f ~/app.jar
+            PREP_EOF
+            
+            scp ${SCP_OPTS} -C "$JAR_FILE" "${SERVER_USER}@${SERVER_HOST}:~/app.jar"
+            
+            ssh ${SSH_OPTS} "${SERVER_USER}@${SERVER_HOST}" << 'DEPLOY_EOF'
+              if [ ! -f ~/app.jar ]; then
+                echo "❌ Error: app.jar not found"
+                exit 1
+              fi
+              sudo mv ~/app.jar /www/wwwroot/expat-compass/backend/app.jar 2>/dev/null || mv ~/app.jar /www/wwwroot/expat-compass/backend/app.jar
+              sudo chmod 755 /www/wwwroot/expat-compass/backend/app.jar 2>/dev/null || chmod 755 /www/wwwroot/expat-compass/backend/app.jar 2>/dev/null || true
+              sudo chown www:www /www/wwwroot/expat-compass/backend/app.jar 2>/dev/null || chown www:www /www/wwwroot/expat-compass/backend/app.jar 2>/dev/null || true
+              echo "✅ JAR file deployed successfully"
+            DEPLOY_EOF
+          fi
 
       - name: Restart backend service
         if: steps.changes.outputs.build_backend == 'true'
@@ -301,159 +397,74 @@ jobs:
           SERVER_PORT="${{ secrets.SERVER_PORT || '22' }}"
           SERVER_USER="${{ secrets.SERVER_USER }}"
           SERVER_HOST="${{ secrets.SERVER_HOST }}"
-          ssh -p "${SERVER_PORT}" -T -q -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o ConnectTimeout=10 -o LogLevel=ERROR "${SERVER_USER}@${SERVER_HOST}" << 'EOF'
-            # 如果使用 systemd 服务
-            if sudo systemctl is-active --quiet expat-compass 2>/dev/null || systemctl is-active --quiet expat-compass 2>/dev/null; then
-              echo "Restarting via systemd..."
-              sudo systemctl restart expat-compass
-              sleep 1
-              sudo systemctl status expat-compass --no-pager || true
-            else
-              # 否则使用进程管理
-              echo "Stopping old process..."
-              sudo pkill -f "java.*app.jar" || pkill -f "java.*app.jar" || true
-              sleep 1
+          SSH_OPTS="-p ${SERVER_PORT} -T -q -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o ConnectTimeout=10 -o LogLevel=ERROR"
+          SCP_OPTS="-P ${SERVER_PORT} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o ConnectTimeout=10"
+          
+          # 上传 systemd 服务文件（如果需要）
+          SERVICE_NAME="expat-compass-backend"
+          SERVICE_FILE="/etc/systemd/system/${SERVICE_NAME}.service"
+          
+          # 检查服务是否已安装
+          SERVICE_EXISTS=$(ssh ${SSH_OPTS} "${SERVER_USER}@${SERVER_HOST}" "test -f $SERVICE_FILE && echo 'yes' || echo 'no'")
+          
+          if [ "$SERVICE_EXISTS" != "yes" ]; then
+            echo "📦 Installing systemd service (first time)..."
+            
+            # 上传服务文件
+            scp ${SCP_OPTS} backend/expat-compass-backend.service "${SERVER_USER}@${SERVER_HOST}:~/expat-compass-backend.service"
+            
+            # 安装服务
+            ssh ${SSH_OPTS} "${SERVER_USER}@${SERVER_HOST}" << 'INSTALL_EOF'
+              BACKEND_DIR="/www/wwwroot/expat-compass/backend"
               
-              # 快速检查 Java 环境（跳过安装，假设已安装）
-              echo "Checking Java installation..."
-              JAVA_CMD=""
-              if command -v java &> /dev/null; then
-                JAVA_CMD=$(which java)
-              else
-                # 尝试查找 Java 的完整路径（不安装，只查找）
-                JAVA_PATHS=(
-                  "/usr/bin/java"
-                  "/usr/lib/jvm/java-17-openjdk-amd64/bin/java"
-                  "/usr/lib/jvm/java-17-openjdk/bin/java"
-                  "/usr/lib/jvm/default-java/bin/java"
-                )
-                for path in "${JAVA_PATHS[@]}"; do
-                  if [ -x "$path" ]; then
-                    JAVA_CMD="$path"
-                    echo "✅ Found Java at: $JAVA_CMD"
-                    break
-                  fi
-                done
-                
-                if [ -z "$JAVA_CMD" ]; then
-                  echo "❌ Error: Java not found"
-                  echo "Please install Java manually: sudo apt-get install -y openjdk-17-jdk"
-                  exit 1
-                fi
-              fi
+              # 确保目录存在
+              sudo mkdir -p "$BACKEND_DIR/logs" "$BACKEND_DIR/tmp" || true
+              sudo chown -R www:www "$BACKEND_DIR" || true
+              sudo chmod 755 "$BACKEND_DIR/logs" "$BACKEND_DIR/tmp" || true
               
-              echo "Using Java: $JAVA_CMD"
+              # 移动服务文件到系统目录
+              sudo mv ~/expat-compass-backend.service /etc/systemd/system/expat-compass-backend.service
+              sudo chmod 644 /etc/systemd/system/expat-compass-backend.service
               
-              echo "Starting new process..."
-              cd /www/wwwroot/expat-compass/backend || { echo "❌ Error: Cannot cd to backend directory"; exit 1; }
-              
-              # 检查 app.jar 是否存在
-              if [ ! -f app.jar ]; then
-                echo "❌ Error: app.jar not found in /www/wwwroot/expat-compass/backend/"
-                ls -la /www/wwwroot/expat-compass/backend/ || true
-                exit 1
-              fi
-              echo "✅ Found app.jar: $(ls -lh app.jar)"
-              
-              # 使用绝对路径
-              LOG_FILE="/www/wwwroot/expat-compass/backend/logs/app.log"
-              LOG_DIR="/www/wwwroot/expat-compass/backend/logs"
-              JAR_FILE="/www/wwwroot/expat-compass/backend/app.jar"
-              APP_TMP_DIR="/www/wwwroot/expat-compass/backend/tmp"
-              
-              # 确保日志目录存在并有完整权限
-              sudo mkdir -p "$LOG_DIR" || mkdir -p "$LOG_DIR"
-              sudo chmod 755 "$LOG_DIR" || chmod 755 "$LOG_DIR"
-              sudo chown www:www "$LOG_DIR" 2>/dev/null || chown www:www "$LOG_DIR" 2>/dev/null || true
-              
-              # 删除旧的日志文件（如果存在）
-              sudo rm -f "$LOG_FILE" || rm -f "$LOG_FILE"
-              
-              # 创建日志文件并设置权限（使用 sudo -u www 创建，确保所有者正确）
-              sudo -u www touch "$LOG_FILE" 2>/dev/null || touch "$LOG_FILE"
-              sudo chmod 644 "$LOG_FILE" 2>/dev/null || chmod 644 "$LOG_FILE" 2>/dev/null || true
-              sudo chown www:www "$LOG_FILE" 2>/dev/null || chown www:www "$LOG_FILE" 2>/dev/null || true
-              
-              # 验证文件是否创建成功
-              if [ ! -f "$LOG_FILE" ]; then
-                echo "⚠️  Warning: Failed to create log file, will try to create during startup"
-              else
-                echo "✅ Log file created: $(ls -lh $LOG_FILE)"
-              fi
-              
-              # 检查端口是否被占用（使用不需要 root 权限的方法）
-              if ss -tln 2>/dev/null | grep -q ":8080" || netstat -tln 2>/dev/null | grep -q ":8080"; then
-                echo "⚠️  Warning: Port 8080 is already in use"
-                ss -tln 2>/dev/null | grep 8080 || netstat -tln 2>/dev/null | grep 8080 || true
-              fi
-              
-              # 创建应用专用的临时目录（避免 /tmp 权限问题）
-              sudo mkdir -p "$APP_TMP_DIR" || mkdir -p "$APP_TMP_DIR"
-              sudo chmod 755 "$APP_TMP_DIR" || chmod 755 "$APP_TMP_DIR"
-              sudo chown www:www "$APP_TMP_DIR" 2>/dev/null || chown www:www "$APP_TMP_DIR" 2>/dev/null || true
-              echo "✅ Created temp directory: $APP_TMP_DIR"
-              
-              # 尝试使用 sudo -u www 启动
-              echo "Starting application..."
-              cd /www/wwwroot/expat-compass/backend
-              sudo -u www bash -c "cd /www/wwwroot/expat-compass/backend && nohup '$JAVA_CMD' -jar -Xms512m -Xmx1024m -Dspring.profiles.active=prod -Djava.io.tmpdir='$APP_TMP_DIR' '$JAR_FILE' > '$LOG_FILE' 2>&1 &" || {
-                echo "Failed with sudo -u www, trying without sudo..."
-                nohup "$JAVA_CMD" -jar -Xms512m -Xmx1024m -Dspring.profiles.active=prod -Djava.io.tmpdir="$APP_TMP_DIR" "$JAR_FILE" > "$LOG_FILE" 2>&1 &
-              }
-              # 快速检查进程是否启动
-              sleep 1
-              if ! pgrep -f "java.*app.jar" > /dev/null; then
-                echo "Process not found, retrying without sudo..."
-                # 确保目录和文件权限正确
-                mkdir -p "$LOG_DIR" "$APP_TMP_DIR" || true
-                chmod 755 "$LOG_DIR" "$APP_TMP_DIR" || true
-                touch "$LOG_FILE" || true
-                chmod 644 "$LOG_FILE" || true
-                cd /www/wwwroot/expat-compass/backend
-                nohup "$JAVA_CMD" -jar -Xms512m -Xmx1024m -Dspring.profiles.active=prod -Djava.io.tmpdir="$APP_TMP_DIR" "$JAR_FILE" > "$LOG_FILE" 2>&1 &
-                sleep 1
-              fi
-              
-              # 检查进程
-              if pgrep -f "java.*app.jar" > /dev/null; then
-                echo "✅ Java process is running"
-                echo "Process info:"
-                ps aux | grep "java.*app.jar" | grep -v grep || true
-                echo ""
-                
-                # 快速检查端口（只检查一次，不等待）
-                if ss -tln 2>/dev/null | grep -q ":8080" || netstat -tln 2>/dev/null | grep -q ":8080"; then
-                  echo "✅ Port 8080 is listening"
-                  ss -tln 2>/dev/null | grep 8080 || netstat -tln 2>/dev/null | grep 8080
-                else
-                  echo "⚠️  Port 8080 not listening yet (normal, Spring Boot takes 30-60s to start)"
-                  echo "   Health check will wait for the application"
-                fi
-              else
-                echo "❌ Backend service failed to start"
-                echo "Checking log file..."
-                if [ -f "$LOG_FILE" ]; then
-                  echo "=== Last 30 lines of log ==="
-                  tail -30 "$LOG_FILE"
-                else
-                  echo "Log file not found at: $LOG_FILE"
-                fi
-                echo ""
-                echo "Checking Java processes..."
-                ps aux | grep java | grep -v grep || echo "No Java processes found"
-                echo ""
-                echo "Checking directory structure..."
-                ls -la /www/wwwroot/expat-compass/backend/ || true
-                echo ""
-                echo "Checking file permissions..."
-                ls -lh /www/wwwroot/expat-compass/backend/app.jar || true
-                echo ""
-                echo "Testing Java execution..."
-                "$JAVA_CMD" -version || true
-                exit 1
-              fi
+              # 重新加载 systemd 并启用服务
+              sudo systemctl daemon-reload
+              sudo systemctl enable expat-compass-backend
+              echo "✅ Systemd service installed and enabled"
+            INSTALL_EOF
+          else
+            echo "✅ Systemd service already exists"
+          fi
+          
+          # 重启服务
+          ssh ${SSH_OPTS} "${SERVER_USER}@${SERVER_HOST}" << 'RESTART_EOF'
+            SERVICE_NAME="expat-compass-backend"
+            BACKEND_DIR="/www/wwwroot/expat-compass/backend"
+            
+            # 停止旧进程（如果存在且不是 systemd 管理的）
+            if pgrep -f "java.*app.jar" > /dev/null && ! sudo systemctl is-active --quiet "$SERVICE_NAME" 2>/dev/null; then
+              echo "🛑 Stopping old process..."
+              sudo pkill -f "java.*app.jar" || true
+              sleep 2
             fi
-          EOF
+            
+            # 重启 systemd 服务
+            echo "🔄 Restarting systemd service..."
+            sudo systemctl restart "$SERVICE_NAME"
+            sleep 2
+            
+            # 检查服务状态
+            if sudo systemctl is-active --quiet "$SERVICE_NAME"; then
+              echo "✅ Service is running"
+              sudo systemctl status "$SERVICE_NAME" --no-pager -l || true
+            else
+              echo "❌ Service failed to start"
+              sudo systemctl status "$SERVICE_NAME" --no-pager -l || true
+              echo ""
+              echo "Recent logs:"
+              sudo journalctl -u "$SERVICE_NAME" -n 20 --no-pager || tail -30 "$BACKEND_DIR/logs/app.log" 2>/dev/null || echo "No logs available"
+              exit 1
+            fi
+          RESTART_EOF
 
       - name: Health check
         run: |
