@@ -1,5 +1,7 @@
+# ============================================
 # Logs
-logs
+# ============================================
+logs/
 *.log
 npm-debug.log*
 yarn-debug.log*
@@ -7,55 +9,199 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
- # Packages
+# ============================================
+# Dependencies
+# ============================================
 node_modules/
+.pnp
+.pnp.js
 
+# ============================================
 # Build outputs
+# ============================================
+# Frontend
 dist/
 dist-ssr/
-/frontend/dist/
-/backend/dist/
-**/target/
+build/
+.next/
+out/
 
-# Environment files
+# Backend
+**/target/
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+*.zip
+*.tar.gz
+*.rar
+
+# ============================================
+# Environment & Config
+# ============================================
 .env
 .env.local
+.env.development.local
+.env.test.local
+.env.production.local
 .env.*.local
 
-# Tooling caches
+# Deployment config (contains sensitive info)
+scripts/.deploy-config
+*.pem
+*.key
+*.crt
+*.p12
+*.jks
+
+# ============================================
+# Uploads & User Content
+# ============================================
+backend/uploads/
+backend/src/main/resources/uploads/
+**/uploads/*
+!**/uploads/.gitkeep
+
+# ============================================
+# SSL Certificates
+# ============================================
+scripts/ssl/*.pem
+scripts/ssl/*.key
+scripts/ssl/*.crt
+scripts/ssl/*.csr
+scripts/ssl/*.conf
+scripts/ssl/archive/
+scripts/ssl/live/
+scripts/ssl/renewal/
+
+# ============================================
+# Package Manager
+# ============================================
 package-lock.json
 yarn.lock
-.pnpm-store
-.turbo/
-.cache/
+pnpm-lock.yaml
+.pnpm-store/
+.pnpm-debug.log
 
+# ============================================
+# Tooling & Caches
+# ============================================
+.cache/
+.parcel-cache/
+.turbo/
+.vite/
+.mvn/
+.mvn/wrapper/maven-wrapper.jar
+.mvn/wrapper/maven-wrapper.properties
+
+# ============================================
 # Editor & IDE
+# ============================================
+# VSCode
 .vscode/*
 !.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+
+# IntelliJ IDEA
 .idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# Eclipse
+.classpath
+.project
+.settings/
+bin/
+
+# NetBeans
+nbproject/
+nbbuild/
+nbdist/
+.nb-gradle/
+
+# VS Code
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
-*.iml
 
+# ============================================
 # OS
+# ============================================
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
+Desktop.ini
 
-# Tests & coverage
+# ============================================
+# Testing & Coverage
+# ============================================
 coverage/
 *.lcov
+.nyc_output/
+junit.xml
+test-results/
+playwright-report/
+playwright/.cache/
 
-# Docker/PIDs
+# ============================================
+# Temporary Files
+# ============================================
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+*.bak
+*.backup
+
+# ============================================
+# Docker
+# ============================================
 *.pid
 *.seed
+docker-compose.override.yml
 
+# ============================================
 # Storybook
+# ============================================
 storybook-static/
+storybook-build/
 
-# Husky internal
-/frontend/.husky/_/
+# ============================================
+# Husky
+# ============================================
+frontend/.husky/_/
+.husky/_/
 
-docs
+# ============================================
+# Scripts
+# ============================================
+scripts/
+!scripts/.gitkeep
+
+# ============================================
+# Project Specific
+# ============================================
+# Documentation (if auto-generated)
+docs/_build/
+docs/.vuepress/dist/
+
+# Database dumps
+*.sql.gz
+*.sql.bak
+*.dump
+
+# Local development
+.local/
+local/
