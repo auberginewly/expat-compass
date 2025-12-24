@@ -205,3 +205,5 @@ docs/.vuepress/dist/
 # Local development
 .local/
 local/
+
+.vscode/
