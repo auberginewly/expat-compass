@@ -14,60 +14,79 @@
 
 ## 🏗️ 项目结构
 
+本项目采用**标准分层架构**（Layered Architecture），将代码按照职责划分为不同的层次：
+
 ```
 backend/
 ├── src/main/java/com/expats/nanchang/
 │   ├── GatewayApplication.java          # 主应用入口
 │   │
-│   ├── api/                              # API 层（控制器）
-│   │   └── controller/
-│   │       ├── AuthController.java       # 认证（登录/注册）
-│   │       ├── PostController.java       # 论坛帖子
-│   │       ├── CommentController.java    # 论坛评论
-│   │       ├── FileUploadController.java # 文件上传
-│   │       ├── AiController.java         # AI 对话
-│   │       └── HealthController.java     # 健康检查
+│   ├── controller/                      # 控制器层（Controller Layer）
+│   │   ├── AuthController.java          # 认证（登录/注册）
+│   │   ├── PostController.java          # 论坛帖子
+│   │   ├── CommentController.java       # 论坛评论
+│   │   ├── FileUploadController.java   # 文件上传
+│   │   └── AiController.java            # AI 对话
 │   │
-│   ├── application/                      # 应用服务层（业务逻辑）
-│   │   ├── identity/
-│   │   │   └── AuthService.java          # 认证服务
-│   │   ├── forum/
-│   │   │   ├── PostService.java          # 帖子服务
-│   │   │   └── CommentService.java       # 评论服务
-│   │   ├── content/
-│   │   │   └── GuideService.java         # 指南服务
-│   │   └── ai/
-│   │       └── AiService.java           # AI 服务
+│   ├── service/                         # 服务层（Service Layer）
+│   │   ├── AuthService.java            # 认证服务
+│   │   ├── PostService.java            # 帖子服务
+│   │   ├── CommentService.java         # 评论服务
+│   │   └── AiService.java              # AI 服务
 │   │
-│   ├── core/                             # 核心领域层（实体）
-│   │   ├── identity/domain/              # 用户、角色
-│   │   ├── forum/domain/                 # 帖子、评论
-│   │   ├── content/domain/               # 指南内容
-│   │   └── ai/domain/                    # AI 对话、知识库
+│   ├── repository/                      # 仓库层（Repository Layer）
+│   │   ├── UserRepository.java         # 用户 Repository
+│   │   ├── PostRepository.java         # 帖子 Repository
+│   │   ├── CommentRepository.java      # 评论 Repository
+│   │   ├── ConversationRepository.java # 对话 Repository
+│   │   ├── MessageRepository.java      # 消息 Repository
+│   │   └── RefreshTokenRepository.java  # 刷新令牌 Repository
 │   │
-│   ├── infrastructure/                   # 基础设施层
-│   │   ├── identity/
-│   │   │   ├── repository/               # 用户、角色 Repository
-│   │   │   ├── service/                  # 验证码服务
-│   │   │   └── util/                     # JWT、密码工具
-│   │   ├── forum/repository/             # 论坛 Repository
-│   │   ├── content/repository/           # 内容 Repository
-│   │   ├── ai/
-│   │   │   ├── repository/               # AI Repository
-│   │   │   └── integration/              # AI 客户端集成
-│   │   ├── config/                       # 配置类（Security、Web）
-│   │   └── filter/                       # 过滤器（JWT、TraceId）
+│   ├── domain/                          # 领域实体层（Domain Layer）
+│   │   ├── User.java                   # 用户实体
+│   │   ├── Role.java                   # 角色实体
+│   │   ├── UserRole.java               # 用户角色关联
+│   │   ├── Post.java                   # 帖子实体
+│   │   ├── Comment.java                # 评论实体
+│   │   ├── Conversation.java           # AI 对话实体
+│   │   ├── Message.java                # AI 消息实体
+│   │   └── RefreshToken.java           # 刷新令牌实体
 │   │
-│   ├── common/                           # 共享模块
-│   │   ├── dto/                          # DTO 类
-│   │   ├── exception/                    # 业务异常
-│   │   └── logging/                      # 日志追踪
+│   ├── dto/                             # 数据传输对象层（DTO Layer）
+│   │   └── ResponseEnvelope.java       # 统一响应包装类
 │   │
-│   └── support/                          # 支持模块（已整合到 common）
+│   ├── common/                          # 共享 DTO（按模块组织）
+│   │   └── dto/                        # 请求/响应 DTO
+│   │       ├── auth/                   # 认证相关 DTO
+│   │       ├── forum/                  # 论坛相关 DTO
+│   │       ├── ai/                     # AI 相关 DTO
+│   │       └── identity/                # 用户资料相关 DTO
+│   │
+│   ├── config/                          # 配置层（Configuration Layer）
+│   │   ├── SecurityConfig.java         # Spring Security 配置
+│   │   └── WebConfig.java              # Web 配置
+│   │
+│   ├── infrastructure/                  # 基础设施层（Infrastructure Layer）
+│   │   ├── filter/                     # 过滤器
+│   │   │   ├── JwtAuthenticationFilter.java  # JWT 认证过滤器
+│   │   │   └── TraceIdFilter.java            # 追踪ID过滤器
+│   │   ├── util/                       # 工具类
+│   │   │   ├── JwtUtil.java            # JWT 工具
+│   │   │   ├── CaptchaService.java     # 验证码服务
+│   │   │   ├── PasswordStrengthChecker.java  # 密码强度检查
+│   │   │   └── TraceIdHolder.java      # 追踪ID持有者
+│   │   └── integration/                # 外部集成
+│   │       └── ai/                     # AI 客户端集成
+│   │           ├── AiClient.java       # AI 客户端接口
+│   │           ├── SiliconFlowClient.java  # 硅基流动客户端
+│   │           └── MockAiClient.java   # Mock 客户端（测试用）
+│   │
+│   └── exception/                       # 异常类（Exception Layer）
+│       └── BusinessException.java      # 业务异常
 │
 └── src/main/resources/
-    ├── application.yml                   # 主配置文件
-    └── db/                               # 数据库脚本
+    ├── application.yml                  # 主配置文件
+    └── db/                              # 数据库脚本
 ```
 
 ## 🎯 分层架构
