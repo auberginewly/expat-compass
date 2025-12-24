@@ -11,7 +11,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
-import com.expats.nanchang.common.logging.TraceIdHolder;
+import com.expats.nanchang.infrastructure.util.TraceIdHolder;
 
 /**
  * 请求追踪ID过滤器

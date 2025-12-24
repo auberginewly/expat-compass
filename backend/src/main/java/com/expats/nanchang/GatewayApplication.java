@@ -6,8 +6,8 @@ import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
 @SpringBootApplication(scanBasePackages = "com.expats.nanchang")
-@EntityScan(basePackages = "com.expats.nanchang.core")
-@EnableJpaRepositories(basePackages = "com.expats.nanchang.infrastructure")
+@EntityScan(basePackages = "com.expats.nanchang.domain")
+@EnableJpaRepositories(basePackages = "com.expats.nanchang.repository")
 public class GatewayApplication {
 
     public static void main(String[] args) {

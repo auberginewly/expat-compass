@@ -14,7 +14,7 @@ public record ConversationDto(
         OffsetDateTime createdAt,
         OffsetDateTime updatedAt
 ) {
-    public static ConversationDto from(com.expats.nanchang.core.ai.domain.Conversation conversation) {
+    public static ConversationDto from(com.expats.nanchang.domain.Conversation conversation) {
         return new ConversationDto(
                 conversation.getId(),
                 conversation.getTitle(),

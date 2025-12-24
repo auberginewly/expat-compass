@@ -1,6 +1,6 @@
 package com.expats.nanchang.infrastructure.filter;
 
-import com.expats.nanchang.infrastructure.identity.util.JwtUtil;
+import com.expats.nanchang.infrastructure.util.JwtUtil;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

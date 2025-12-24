@@ -12,7 +12,7 @@ public record MessageDto(
         String content,
         OffsetDateTime createdAt
 ) {
-    public static MessageDto from(com.expats.nanchang.core.ai.domain.Message message) {
+    public static MessageDto from(com.expats.nanchang.domain.Message message) {
         return new MessageDto(
                 message.getId(),
                 message.getRole(),

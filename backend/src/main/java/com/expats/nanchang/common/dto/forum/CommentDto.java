@@ -1,6 +1,6 @@
 package com.expats.nanchang.common.dto.forum;
 
-import com.expats.nanchang.core.forum.domain.Comment;
+import com.expats.nanchang.domain.Comment;
 
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -56,7 +56,7 @@ public record CommentDto(
             String displayName,
             String avatarUrl
     ) {
-        public static AuthorDto from(com.expats.nanchang.core.identity.domain.User user) {
+        public static AuthorDto from(com.expats.nanchang.domain.User user) {
             return new AuthorDto(
                     user.getId(),
                     user.getDisplayName() != null ? user.getDisplayName() : user.getEmail().split("@")[0],
